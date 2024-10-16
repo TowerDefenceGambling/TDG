@@ -31,8 +31,10 @@ def add_user(username, password, progress):
                        (username, hashed_pw, progress))
         conn.commit()
         print("Added user successfully.")
+        return True
     except sqlite3.IntegrityError:
         print("User already exists.")
+        return False
 
 # update a user's progress
 def update_user_progress(username, new_progress):

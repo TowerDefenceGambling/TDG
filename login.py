@@ -1,6 +1,8 @@
 import pygame
 import sys
 import saveUser as su
+from button import Button
+import register as reg
 
 
 pygame.init()
@@ -83,6 +85,20 @@ def open_login_window():
         PASSWORD_TEXT = small_font.render(f"Password: {'*' * len(password)}", True, (255, 255, 255))
         login_screen.blit(PASSWORD_TEXT, (password_box_rect.x + 10, password_box_rect.y + 10))
 
+        LOGIN_MOUSE_POS = pygame.mouse.get_pos()
+
+        LOGIN_LOGIN = Button(image=None, pos=(center_x-100, 450), 
+                            text_input="LOGIN", font=small_font, base_color="White", hovering_color="Green")
+
+        LOGIN_LOGIN.changeColor(LOGIN_MOUSE_POS)
+        LOGIN_LOGIN.update(login_screen)
+        
+        LOGIN_REGISTER = Button(image=None, pos=(center_x+100, 450), 
+                            text_input="REGISTER", font=small_font, base_color="White", hovering_color="Green")
+
+        LOGIN_REGISTER.changeColor(LOGIN_MOUSE_POS)
+        LOGIN_REGISTER.update(login_screen)
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -103,6 +119,30 @@ def open_login_window():
                 else:
                     username_active = False
                     password_active = False
+
+                if LOGIN_REGISTER.checkForInput(LOGIN_MOUSE_POS):
+                    reg.open_register_window()
+
+                if LOGIN_LOGIN.checkForInput(LOGIN_MOUSE_POS):
+                    if username == "" or password == "":
+                            print("Please enter both username and password.")
+                            ERROR_EMPTY_TEXT = True
+                    else:
+                        ERROR_EMPTY_TEXT = False
+                        print(f"Username: {username}, Password: {password}")  # Mock login attempt
+                        username = username.lower()  # Convert username to lowercase
+                        attempt = su.verify_user(username, password)
+
+                        match attempt:
+                            case "Login successful.":
+                                print("Login successful.")
+                                print(su.get_user_progress(username))
+                            
+                            case "Wrong password.":
+                                print("Wrong password.")
+
+                            case "User not found.":
+                                print("User not found.")
 
             if event.type == pygame.KEYDOWN:
 
@@ -153,3 +193,8 @@ def open_login_window():
                         password += event.unicode  # Append typed character to password
 
         pygame.display.update()
+
+if __name__ == "__main__":
+    open_login_window()
+    pygame.quit()
+    sys.exit()

@@ -1,6 +1,6 @@
 import pygame, sys
 from button import Button
-from login import open_login_window  # Import the function to open the login window
+from login import open_login_window 
 
 pygame.init()
 
