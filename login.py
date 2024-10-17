@@ -99,6 +99,12 @@ def open_login_window():
         LOGIN_REGISTER.changeColor(LOGIN_MOUSE_POS)
         LOGIN_REGISTER.update(login_screen)
 
+        LOGIN_BACK = Button(image=None, pos=(screen_width-100, screen_height-50), 
+                            text_input="BACK", font=small_font, base_color="White", hovering_color="Green")
+
+        LOGIN_BACK.changeColor(LOGIN_MOUSE_POS)
+        LOGIN_BACK.update(login_screen)
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -123,10 +129,14 @@ def open_login_window():
                 if LOGIN_REGISTER.checkForInput(LOGIN_MOUSE_POS):
                     reg.open_register_window()
 
+                if LOGIN_BACK.checkForInput(LOGIN_MOUSE_POS):
+                    return
+
                 if LOGIN_LOGIN.checkForInput(LOGIN_MOUSE_POS):
                     if username == "" or password == "":
                             print("Please enter both username and password.")
                             ERROR_EMPTY_TEXT = True
+
                     else:
                         ERROR_EMPTY_TEXT = False
                         print(f"Username: {username}, Password: {password}")  # Mock login attempt

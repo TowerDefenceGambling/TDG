@@ -15,7 +15,7 @@ center_y = screen_height // 2
 def open_register_window():
     # Set up the login window
     login_screen = pygame.display.set_mode((screen_width, screen_height))  # Create a login window
-    pygame.display.set_caption("Login")
+    pygame.display.set_caption("Sign Up")
 
     font = pygame.font.Font("assets/font.ttf", 35)
     small_font = pygame.font.Font("assets/font.ttf", 25)
@@ -78,7 +78,7 @@ def open_register_window():
 
         
 
-        LOGIN_TEXT = font.render("Enter Credentials", True, (255, 255, 255))
+        LOGIN_TEXT = font.render("Sign Up", True, (255, 255, 255))
         LOGIN_RECT = LOGIN_TEXT.get_rect(center=(center_x, 100))
         login_screen.blit(LOGIN_TEXT, LOGIN_RECT)
 
@@ -104,6 +104,12 @@ def open_register_window():
 
         LOGIN_LOGIN.changeColor(LOGIN_MOUSE_POS)
         LOGIN_LOGIN.update(login_screen)
+
+        LOGIN_BACK = Button(image=None, pos=(screen_width-100, screen_height-50), 
+                            text_input="BACK", font=small_font, base_color="White", hovering_color="Green")
+
+        LOGIN_BACK.changeColor(LOGIN_MOUSE_POS)
+        LOGIN_BACK.update(login_screen)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -134,6 +140,9 @@ def open_register_window():
                     username_active = False
                     password_active = False
                     password_active_2nd = False
+
+                if LOGIN_BACK.checkForInput(LOGIN_MOUSE_POS):
+                    return
 
                 if LOGIN_LOGIN.checkForInput(LOGIN_MOUSE_POS):
                     if username == "":
