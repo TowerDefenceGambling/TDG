@@ -15,6 +15,7 @@ center_x = screen_width // 2
 center_y = screen_height // 2
 
 user_progress = {}
+user_progress_on_load = {}
 
 USERNAME = ""
 
@@ -22,6 +23,7 @@ USERNAME = ""
 def open_login_window():
     global USERNAME
     global user_progress
+    global user_progress_on_load
     # Set up the login window
     login_screen = pygame.display.set_mode((screen_width, screen_height))  # Create a login window
     pygame.display.set_caption("Login")
@@ -157,6 +159,8 @@ def open_login_window():
                             case "Login successful.":
                                 print("Login successful.")
                                 user_progress = su.get_user_progress(username)
+                                user_progress_on_load = user_progress
+                                USERNAME = username
                                 print(user_progress)
                             
                             case "Wrong password.":
