@@ -1,8 +1,11 @@
 import pygame, sys
 from button import Button
-from login import open_login_window 
+import login as lo
+import saveUser as su
 
 pygame.init()
+
+user_progress_on_load = lo.user_progress #{'level': 1, 'points': 0} etc...
 
 SCREEN = pygame.display.set_mode((1280, 720))
 pygame.display.set_caption("Menu")
@@ -11,6 +14,14 @@ BG = pygame.image.load("assets/Background1.png")
 
 def get_font(size): # Returns Press-Start-2P in the desired size
     return pygame.font.Font("assets/font.ttf", size)
+
+def save_user_progress(level: int, points: int, skins: list):
+    new_progress = {
+        "level": level,
+        "points": points,
+        "skins": skins
+    }
+    su.update_user_progress(lo.username, new_progress)
 
 def play():
     while True:
@@ -67,7 +78,15 @@ def options():
 
 def main_menu():
     while True:
+        
         SCREEN.blit(BG, (0, 0))
+        if lo.USERNAME == "":
+            user_logged = "not logged in"
+        else:
+            user_logged = lo.USERNAME
+        USERNAME_TEXT = get_font(15).render(f"{user_logged}", True, "White")
+        USERNAME_RECT = USERNAME_TEXT.get_rect(bottomleft=(20, 690))
+        SCREEN.blit(USERNAME_TEXT, USERNAME_RECT)
 
         MENU_MOUSE_POS = pygame.mouse.get_pos()
 
@@ -99,8 +118,10 @@ def main_menu():
                 if OPTIONS_BUTTON.checkForInput(MENU_MOUSE_POS):
                     options()
                 if LOGIN_BUTTON.checkForInput(MENU_MOUSE_POS):
-                    open_login_window() 
+                    lo.open_login_window()
+                    user_progress_on_load = lo.user_progress
                 if QUIT_BUTTON.checkForInput(MENU_MOUSE_POS):
+                    # save_user_progress(level...)
                     pygame.quit()
                     sys.exit()
 
