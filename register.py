@@ -6,6 +6,8 @@ from button import Button
 
 pygame.init()
 
+BG = pygame.image.load("assets/Background1.png")
+
 screen_width = 1280
 screen_height = 720
 center_x = screen_width // 2
@@ -56,7 +58,7 @@ def open_register_window():
         login_screen.blit(ERROR_TEXT, ERROR_RECT)
 
     while True:
-        login_screen.fill((30, 30, 30))  # Set background color for the login window
+        login_screen.blit(BG, (0, 0))
 
         if ERROR_EMPTY_TEXT:
             error_message("Please type in a username and a Password!", (255, 50, 50))

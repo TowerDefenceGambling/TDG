@@ -7,6 +7,8 @@ import register as reg
 
 pygame.init()
 
+BG = pygame.image.load("assets/Background1.png")
+
 screen_width = 1280
 screen_height = 720
 center_x = screen_width // 2
@@ -17,6 +19,8 @@ def open_login_window():
     # Set up the login window
     login_screen = pygame.display.set_mode((screen_width, screen_height))  # Create a login window
     pygame.display.set_caption("Login")
+
+    
 
     font = pygame.font.Font("assets/font.ttf", 35)
     small_font = pygame.font.Font("assets/font.ttf", 25)
@@ -46,7 +50,7 @@ def open_login_window():
     ERROR_EMPTY_TEXT = False
 
     while True:
-        login_screen.fill((30, 30, 30))  # Set background color for the login window
+        login_screen.blit(BG, (0, 0))
 
         if ERROR_EMPTY_TEXT:
             ERROR_TEXT = small_font.render("Please type in a username and a Password!", True, (255, 50, 50))
