@@ -82,7 +82,6 @@ def verify_user(username: str, password: str) -> str:
                 return "Wrong password."
         else:
             return "User not found."
-
 # Example usage of get_user_progress
 # print(get_user_progress("player2"))
 # update_user_progress("player2", '{"level": 25, "points": 6000}')

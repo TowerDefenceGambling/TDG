@@ -25,7 +25,7 @@ SCREEN_WIDTH = pygame.display.Info().current_w
 SCREEN_HEIGHT = pygame.display.Info().current_h
 
 # Load and scale background image
-BACKGROUND_IMAGE = pygame.image.load("C:/Users/VWWRGA8/Desktop/td-gambling/assets/map.jpg")
+BACKGROUND_IMAGE = pygame.image.load("assets/map.jpg")
 BACKGROUND_IMAGE = pygame.transform.scale(BACKGROUND_IMAGE, (SCREEN_WIDTH, SCREEN_HEIGHT))
 
 # Define the path as a list of (x, y) coordinates
