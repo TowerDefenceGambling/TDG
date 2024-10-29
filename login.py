@@ -8,7 +8,7 @@ import register as reg
 pygame.init()
 
 # Load background image
-BG = pygame.image.load("assets/Background1.png")
+BG = pygame.image.load("assets/start_screen/Background1.png")
 
 # Define screen dimensions and center points
 screen_width = 1280
@@ -19,8 +19,23 @@ center_y = screen_height // 2
 # User-related variables
 user_progress = {}
 user_progress_on_load = {}
+is_logged_in = False
+logged_in_user = None
 
-USERNAME = ""  # Global username for tracking logged-in user
+def check_login_status():
+    """
+    Returns a tuple of (is_logged_in, logged_in_user).
+    """
+    return is_logged_in, logged_in_user
+    
+def logout():
+    """
+    Logs out the current user by resetting the global login status.
+    """
+    global is_logged_in, logged_in_user
+    is_logged_in = False
+    logged_in_user = None
+    print("User logged out successfully.")
 
 def open_login_window():
     """
@@ -28,17 +43,16 @@ def open_login_window():
     This function displays the login screen, handles input validation, and updates the global
     USERNAME variable when a successful login occurs.
     """
-    global USERNAME
-    global user_progress
-    global user_progress_on_load
+    global user_progress, user_progress_on_load
+    global is_logged_in, logged_in_user
 
     # Set up the login window
     login_screen = pygame.display.set_mode((screen_width, screen_height))
     pygame.display.set_caption("Login")
 
     # Font settings
-    font = pygame.font.Font("assets/font.ttf", 35)
-    small_font = pygame.font.Font("assets/font.ttf", 25)
+    font = pygame.font.Font("assets/start_screen/font.ttf", 35)
+    small_font = pygame.font.Font("assets/start_screen/font.ttf", 25)
 
     # Input variables for username and password
     username = ""
@@ -70,6 +84,7 @@ def open_login_window():
     # Blinking caret variables
     caret_visible = True  # Track whether caret is visible
     caret_timer = 0  # Timer to control caret blinking
+
 
     # Function to display error messages
     def error_message(message: str, color):
@@ -181,7 +196,8 @@ def open_login_window():
                         if attempt == "Login successful.":
                             user_progress = su.get_user_progress(username)
                             user_progress_on_load = user_progress
-                            USERNAME = username  # Update global username
+                            logged_in_user = username
+                            is_logged_in = True
                         else:
                             ERROR_EMPTY_TEXT = True
 
@@ -204,7 +220,8 @@ def open_login_window():
                             username = username.lower()
                             attempt = su.verify_user(username, password)
                             if attempt == "Login successful.":
-                                USERNAME = username  # Update global username
+                                logged_in_user = username
+                                is_logged_in = True
                                 user_progress = su.get_user_progress(username)
                                 user_progress_on_load = user_progress
                         else:
