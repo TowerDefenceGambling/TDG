@@ -8,7 +8,7 @@ import register as reg
 pygame.init()
 
 # Load background image
-BG = pygame.image.load("assets/start_screen/Background1.png")
+BG = pygame.image.load("assets/images/start_screen/Background1.png")
 
 # Define screen dimensions and center points
 screen_width = 1280
@@ -51,8 +51,8 @@ def open_login_window():
     pygame.display.set_caption("Login")
 
     # Font settings
-    font = pygame.font.Font("assets/start_screen/font.ttf", 35)
-    small_font = pygame.font.Font("assets/start_screen/font.ttf", 25)
+    font = pygame.font.Font("assets/images/start_screen/font.ttf", 35)
+    small_font = pygame.font.Font("assets/images/start_screen/font.ttf", 25)
 
     # Input variables for username and password
     username = ""

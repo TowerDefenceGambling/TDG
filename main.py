@@ -2,6 +2,7 @@ import pygame, sys
 from button import Button
 import login as login
 import saveUser as su
+import testGame as tg
 
 pygame.init()
 
@@ -10,11 +11,11 @@ user_progress_on_load = login.user_progress  # {'level': 1, 'points': 0} etc...
 SCREEN = pygame.display.set_mode((1280, 720))
 pygame.display.set_caption("Menu")
 
-BG = pygame.image.load("assets/start_screen/Background1.png")
+BG = pygame.image.load("assets/images/start_screen/Background1.png")
 
 
 def get_font(size):  # Returns Press-Start-2P in the desired size
-    return pygame.font.Font("assets/start_screen/font.ttf", size)
+    return pygame.font.Font("assets/images/start_screen/font.ttf", size)
 
 
 def save_user_progress(level: int, points: int, skins: list):
@@ -96,11 +97,11 @@ def main_menu():
         MENU_TEXT = get_font(100).render("MAIN MENU", True, "#b68f40")
         MENU_RECT = MENU_TEXT.get_rect(center=(640, 100))
 
-        PLAY_BUTTON = Button(image=pygame.image.load("assets/start_screen/Play Rect.png"), pos=(640, 250),
+        PLAY_BUTTON = Button(image=pygame.image.load("assets/images/start_screen/Play Rect.png"), pos=(640, 250),
                              text_input="PLAY", font=get_font(75), base_color="#d7fcd4", hovering_color="White")
-        OPTIONS_BUTTON = Button(image=pygame.image.load("assets/start_screen/Options Rect.png"), pos=(640, 400),
+        OPTIONS_BUTTON = Button(image=pygame.image.load("assets/images/start_screen/Options Rect.png"), pos=(640, 400),
                                 text_input="OPTIONS", font=get_font(75), base_color="#d7fcd4", hovering_color="White")
-        QUIT_BUTTON = Button(image=pygame.image.load("assets/start_screen/Quit Rect.png"), pos=(640, 550),
+        QUIT_BUTTON = Button(image=pygame.image.load("assets/images/start_screen/Quit Rect.png"), pos=(640, 550),
                              text_input="QUIT", font=get_font(75), base_color="#d7fcd4", hovering_color="White")
 
         # Handle login or logout button display
@@ -128,7 +129,8 @@ def main_menu():
 
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if PLAY_BUTTON.checkForInput(MENU_MOUSE_POS):
-                    play()
+                    play = tg.TowerDefenseGame()
+                    play.run()
 
                 if OPTIONS_BUTTON.checkForInput(MENU_MOUSE_POS):
                     options()
