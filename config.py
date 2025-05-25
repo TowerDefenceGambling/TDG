@@ -60,3 +60,10 @@ PATH_PERCENTAGES = [
     (0.405, 0.53),
     (0.405, 0.0),
 ]
+
+# Upgrade-Definitionen: Kosten und Effekt-Increment
+TOWER_UPGRADES = {
+    'Damage': {'cost': 20, 'increment': 5},
+    'Range':  {'cost': 20, 'increment': 20},
+    'Reload': {'cost': 20, 'decrement': 200},
+}
