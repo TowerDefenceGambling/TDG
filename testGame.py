@@ -9,23 +9,13 @@ pygame.init()
 SCREEN_WIDTH = pygame.display.Info().current_w
 SCREEN_HEIGHT = pygame.display.Info().current_h
 
-
 # Grid and placement setup
 GRID_SIZE = 80  # size of one grid cell
 PLACEMENT_CELLS = [
-    # Neben unterem vertikalem Pfadabschnitt (x=0.51 → Spalte 8)
-    (7, 8), (9, 8),  # links und rechts
-
-    # Neben horizontalem Teil (x=0.51 → 0.62, y=0.78 → Zeile 6)
+    (7, 8), (9, 8),
     (6, 6), (10, 6),
-
-    # Neben vertikalem Pfadabschnitt bei x=0.62 (Spalte 9–10)
     (8, 5), (10, 5), (8, 4), (10, 4),
-
-    # Neben dem oberen horizontalen Teil (x=0.405 → Spalte 6)
     (5, 3), (7, 3),
-
-    # Neben oberstem vertikalen Abschnitt bei Spalte 6
     (5, 2), (7, 2), (5, 1), (7, 1),
 ]
 
@@ -68,15 +58,14 @@ class Enemy:
     def move(self):
         if self.path_index < len(self.path) - 1:
             target_x, target_y = self.path[self.path_index + 1]
-            direction_x = target_x - self.x
-            direction_y = target_y - self.y
-            distance = (direction_x ** 2 + direction_y ** 2) ** 0.5
-            direction_x /= distance
-            direction_y /= distance
-
-            self.x += direction_x * self.speed
-            self.y += direction_y * self.speed
-
+            dx = target_x - self.x
+            dy = target_y - self.y
+            dist = math.hypot(dx, dy)
+            if dist != 0:
+                dx /= dist
+                dy /= dist
+            self.x += dx * self.speed
+            self.y += dy * self.speed
             if abs(self.x - target_x) < self.speed and abs(self.y - target_y) < self.speed:
                 self.path_index += 1
 
@@ -93,29 +82,27 @@ class Bullet:
         self.y = y
         self.target = target
         self.speed = 10
-        # Load and scale the bullet image
-        self.image = pygame.transform.scale(Bullet_image, (20, 20))  # adjust size as needed
-        self.radius = 10  # Adjust hit radius as needed
+        self.image = pygame.transform.scale(Bullet_image, (20, 20))
+        self.radius = 10
 
     def move(self):
-        direction_x = self.target.x - self.x
-        direction_y = self.target.y - self.y
-        distance = (direction_x ** 2 + direction_y ** 2) ** 0.5
-        direction_x /= distance
-        direction_y /= distance
-
-        self.x += direction_x * self.speed
-        self.y += direction_y * self.speed
+        dx = self.target.x - self.x
+        dy = self.target.y - self.y
+        dist = math.hypot(dx, dy)
+        if dist != 0:
+            dx /= dist
+            dy /= dist
+        self.x += dx * self.speed
+        self.y += dy * self.speed
 
     def draw(self, screen):
-        # Draw the bullet as an image instead of a black circle
-        rotated_image = pygame.transform.rotate(self.image, 0)  # Rotate if needed
-        screen.blit(rotated_image, (int(self.x - self.image.get_width() / 2), int(self.y - self.image.get_height() / 2)))
+        rotated = pygame.transform.rotate(self.image, 0)
+        screen.blit(rotated, (int(self.x - self.image.get_width()/2), int(self.y - self.image.get_height()/2)))
 
     def has_hit_target(self):
-        return (self.target.x - self.x) ** 2 + (self.target.y - self.y) ** 2 <= self.radius ** 2
+        return (self.target.x - self.x)**2 + (self.target.y - self.y)**2 <= self.radius**2
 
-# Tower class (now with selectable cannon types)
+# Tower class
 class Tower:
     def __init__(self, x, y, cannon_type):
         self.x = x
@@ -123,7 +110,7 @@ class Tower:
         self.cannon_type = cannon_type
         self.range = 150 if cannon_type == "double" else 100
         self.damage = 20 if cannon_type == "double" else 10
-        self.cooldown = 2000 if cannon_type == "double" else 1000  # different cooldowns for cannon types
+        self.cooldown = 2000 if cannon_type == "double" else 1000
         self.last_shot = 0
         self.bullets = []
         self.target = None
@@ -133,14 +120,14 @@ class Tower:
     def shoot(self, enemies, current_time):
         if current_time - self.last_shot >= self.cooldown:
             for enemy in enemies:
-                if (enemy.x - self.x) ** 2 + (enemy.y - self.y) ** 2 <= self.range ** 2:
+                if (enemy.x - self.x)**2 + (enemy.y - self.y)**2 <= self.range**2:
                     self.bullets.append(Bullet(self.x, self.y, enemy))
                     self.target = enemy
                     self.last_shot = current_time
                     break
 
     def update_bullets(self):
-        for bullet in self.bullets:
+        for bullet in self.bullets[:]:
             bullet.move()
             if bullet.has_hit_target():
                 bullet.target.health = 0
@@ -148,14 +135,14 @@ class Tower:
 
     def update_rotation(self):
         if self.target:
-            direction_x = self.target.x - self.x
-            direction_y = self.target.y - self.y
-            self.angle = math.degrees(math.atan2(-direction_y, direction_x)) - 90
+            dx = self.target.x - self.x
+            dy = self.target.y - self.y
+            self.angle = math.degrees(math.atan2(-dy, dx)) - 90
 
     def draw(self, screen):
-        rotated_image = pygame.transform.rotate(self.image, self.angle)
-        rotated_rect = rotated_image.get_rect(center=(self.x, self.y))
-        screen.blit(rotated_image, rotated_rect.topleft)
+        rotated = pygame.transform.rotate(self.image, self.angle)
+        rect = rotated.get_rect(center=(self.x, self.y))
+        screen.blit(rotated, rect.topleft)
         for bullet in self.bullets:
             bullet.draw(screen)
 
@@ -172,7 +159,13 @@ class TowerDefenseGame:
         self.spawn_timer = 0
         self.spawn_interval = 2000
         self.lives = 50
-        self.selected_cannon_type = "double"  # Default selected cannon type
+        # Münzsystem
+        self.coins = 20
+        self.coin_reward = 5
+        self.tower_costs = {"double": 20, "small": 10}
+        self.selected_cannon_type = "double"
+        self.message = ""
+        self.message_timer = 0
 
     def spawn_enemy(self):
         self.enemies.append(Enemy(PATH))
@@ -190,46 +183,48 @@ class TowerDefenseGame:
                 self.running = False
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 x, y = pygame.mouse.get_pos()
-
-                # Auswahlknöpfe für Tower-Typen
+                # Auswahlknöpfe
                 if 10 <= x <= 60 and 10 <= y <= 60:
                     self.selected_cannon_type = "double"
                 elif 10 <= x <= 60 and 70 <= y <= 120:
                     self.selected_cannon_type = "small"
                 else:
-                    # Berechne Grid-Position
                     grid_x = x // GRID_SIZE
                     grid_y = y // GRID_SIZE
-
                     if (grid_x, grid_y) in PLACEMENT_CELLS:
-                        world_x = grid_x * GRID_SIZE + GRID_SIZE // 2
-                        world_y = grid_y * GRID_SIZE + GRID_SIZE // 2
-                        self.towers.append(Tower(world_x, world_y, self.selected_cannon_type))
-
+                        cost = self.tower_costs[self.selected_cannon_type]
+                        if self.coins >= cost:
+                            self.coins -= cost
+                            world_x = grid_x * GRID_SIZE + GRID_SIZE // 2
+                            world_y = grid_y * GRID_SIZE + GRID_SIZE // 2
+                            self.towers.append(Tower(world_x, world_y, self.selected_cannon_type))
+                        else:
+                            self.message = f"Nicht genug Münzen! Benötigt: {cost}"
+                            self.message_timer = pygame.time.get_ticks()
 
     def update(self):
         current_time = pygame.time.get_ticks()
+        # Spawn
         if current_time - self.spawn_timer > self.spawn_interval:
             self.spawn_enemy()
             self.spawn_timer = current_time
-
+        # Move enemies
         for enemy in self.enemies:
             enemy.move()
+        # Towers
         for tower in self.towers:
             tower.shoot(self.enemies, current_time)
             tower.update_bullets()
             tower.update_rotation()
-
-        # Check if any enemies have reached the end
-        for enemy in self.enemies:
+        # Check end and rewards
+        for enemy in self.enemies[:]:
             if enemy.has_reached_end():
                 self.lives -= 1
                 self.enemies.remove(enemy)
-
-        # Remove dead enemies
-        self.enemies = [enemy for enemy in self.enemies if enemy.health > 0]
-
-        # End game if lives reach 0
+            elif enemy.health <= 0:
+                self.coins += self.coin_reward
+                self.enemies.remove(enemy)
+        # End game
         if self.lives <= 0:
             self.running = False
 
@@ -239,27 +234,30 @@ class TowerDefenseGame:
             enemy.draw(self.screen)
         for tower in self.towers:
             tower.draw(self.screen)
-
-        # Draw lives
-        font = pygame.font.SysFont(None, 36)
+        # HUD
+        font = pygame.font.SysFont(None, 30)
         lives_text = font.render(f"Lives: {self.lives}", True, BLACK)
-        self.screen.blit(lives_text, (10, 10))
-
-        # Draw cannon selection icons
-        pygame.draw.rect(self.screen, GRAY, (10, 10, 50, 50))  # Button for double cannon
-        pygame.draw.rect(self.screen, GRAY, (10, 70, 50, 50))  # Button for small cannon
+        coins_text = font.render(f"Münzen: {self.coins}", True, BLACK)
+        self.screen.blit(lives_text, (10, SCREEN_HEIGHT - 60))
+        self.screen.blit(coins_text, (10, SCREEN_HEIGHT - 30))
+        # Auswahl-Buttons
+        pygame.draw.rect(self.screen, GRAY, (10, 10, 50, 50))
+        pygame.draw.rect(self.screen, GRAY, (10, 70, 50, 50))
         self.screen.blit(CANNON_double, (10, 10))
         self.screen.blit(CANNON_small, (10, 70))
-
-        # Draw placement grid (optional for debugging or player help)
-        for (gx, gy) in PLACEMENT_CELLS:
-            rect = pygame.Rect(gx * GRID_SIZE, gy * GRID_SIZE, GRID_SIZE, GRID_SIZE)
-            pygame.draw.rect(self.screen, (0, 255, 0), rect, 2)  # grüner Rahmen
-
-
+        # Placement-Grid (Debug)
+        for gx, gy in PLACEMENT_CELLS:
+            rect = pygame.Rect(gx*GRID_SIZE, gy*GRID_SIZE, GRID_SIZE, GRID_SIZE)
+            pygame.draw.rect(self.screen, (0,255,0), rect, 2)
+        # Nachricht bei Fehler
+        if self.message:
+            if pygame.time.get_ticks() - self.message_timer < 2000:
+                msg_surf = font.render(self.message, True, RED)
+                self.screen.blit(msg_surf, (SCREEN_WIDTH//2 - msg_surf.get_width()//2, 20))
+            else:
+                self.message = ""
         pygame.display.flip()
 
-# Run the game
 if __name__ == "__main__":
     game = TowerDefenseGame()
     game.run()
