@@ -55,6 +55,18 @@ class Enemy:
                 self.path_index += 1
 
     def draw(self, screen):
+        # Draw health bar
+        bar_width = config.GRID_SIZE // 2
+        bar_height = 5
+        health_ratio = max(self.health, 0) / config.ENEMY_HEALTH
+        bar_x = self.x - bar_width // 2
+        bar_y = self.y - 20
+        # background
+        pygame.draw.rect(screen, config.RED, (bar_x, bar_y, bar_width, bar_height))
+        # foreground
+        fg_width = int(bar_width * health_ratio)
+        pygame.draw.rect(screen, config.GREEN, (bar_x, bar_y, fg_width, bar_height))
+        # Draw enemy
         draw_circle(screen, (self.x, self.y), config.RED, 10)
 
     def has_reached_end(self):
@@ -105,10 +117,13 @@ class Tower:
                     break
 
     def update_bullets(self):
+        # Move bullets and apply damage only when hit
         for b in self.bullets[:]:
             b.move()
             if b.has_hit_target():
-                b.target.health = 0
+                # Subtract tower's damage from enemy health
+                b.target.health -= self.damage
+                # Remove bullet after hit
                 self.bullets.remove(b)
 
     def update_rotation(self):
@@ -123,6 +138,7 @@ class Tower:
         screen.blit(rot, rect.topleft)
         for b in self.bullets:
             b.draw(screen)
+# end of Tower class
 
 class TowerDefenseGame:
     def __init__(self):
@@ -139,7 +155,7 @@ class TowerDefenseGame:
         self.coins = config.START_COINS
         self.coin_reward = config.COIN_REWARD
         self.tower_costs = {t: cfg['cost'] for t, cfg in config.TOWER_CONFIG.items()}
-        self.selected = 'double'
+        self.selected = None  # no tower selected initially
         self.message = ''
         self.msg_time = 0
 
@@ -161,23 +177,31 @@ class TowerDefenseGame:
                 y1 = y0 + config.ICON_SIZE + config.ICON_PADDING
                 if config.ICON_PADDING <= x <= config.ICON_PADDING + config.ICON_SIZE and y1 <= y <= y1 + config.ICON_SIZE:
                     self.selected = 'small'
+                # place tower
                 if x > config.SHOP_WIDTH:
-                    gx, gy = x // config.GRID_SIZE, y // config.GRID_SIZE
-                    if (gx, gy) in config.PLACEMENT_CELLS:
-                        if (gx, gy) in self.occupied_cells:
-                            self.message = "Hier steht bereits ein Turm"
-                            self.msg_time = pygame.time.get_ticks()
-                        else:
-                            cost = self.tower_costs[self.selected]
-                            if self.coins >= cost:
-                                self.coins -= cost
-                                wx = gx * config.GRID_SIZE + config.GRID_SIZE // 2
-                                wy = gy * config.GRID_SIZE + config.GRID_SIZE // 2
-                                self.towers.append(Tower(wx, wy, self.selected))
-                                self.occupied_cells.add((gx, gy))
-                            else:
-                                self.message = f"Benötigt: {cost} Münzen"
+                    if self.selected is None:
+                        # no tower selected
+                        self.message = "Bitte Turm auswählen"
+                        self.msg_time = pygame.time.get_ticks()
+                    else:
+                        gx, gy = x // config.GRID_SIZE, y // config.GRID_SIZE
+                        if (gx, gy) in config.PLACEMENT_CELLS:
+                            if (gx, gy) in self.occupied_cells:
+                                self.message = "Hier steht bereits ein Turm"
                                 self.msg_time = pygame.time.get_ticks()
+                            else:
+                                cost = self.tower_costs[self.selected]
+                                if self.coins >= cost:
+                                    self.coins -= cost
+                                    wx = gx * config.GRID_SIZE + config.GRID_SIZE // 2
+                                    wy = gy * config.GRID_SIZE + config.GRID_SIZE // 2
+                                    self.towers.append(Tower(wx, wy, self.selected))
+                                    self.occupied_cells.add((gx, gy))
+                                    # reset selection after placing
+                                    self.selected = None
+                                else:
+                                    self.message = f"Benötigt: {cost} Münzen"
+                                    self.msg_time = pygame.time.get_ticks()
 
     def update(self):
         now = pygame.time.get_ticks()
@@ -214,27 +238,53 @@ class TowerDefenseGame:
         self.screen.blit(lives_text, (config.ICON_PADDING + HEART_ICON.get_width() + 5, config.ICON_PADDING + COIN_ICON.get_height() + config.ICON_PADDING + (HEART_ICON.get_height() - lives_text.get_height()) // 2))
         # shop icons
         y0 = config.ICON_PADDING*2 + COIN_ICON.get_height() + HEART_ICON.get_height()
+        # double tower button: availability color
         cd = config.GREEN if self.coins >= self.tower_costs['double'] else config.RED
         pygame.draw.rect(self.screen, cd, (config.ICON_PADDING, y0, config.ICON_SIZE, config.ICON_SIZE))
         self.screen.blit(CANNON_double, (config.ICON_PADDING, y0))
+        # small tower button
         y1 = y0 + config.ICON_SIZE + config.ICON_PADDING
         cs = config.GREEN if self.coins >= self.tower_costs['small'] else config.RED
         pygame.draw.rect(self.screen, cs, (config.ICON_PADDING, y1, config.ICON_SIZE, config.ICON_SIZE))
         self.screen.blit(CANNON_small, (config.ICON_PADDING, y1))
-                # draw entities
+        # highlight selected tower
+        if self.selected == 'double':
+            pygame.draw.rect(self.screen, (0, 0, 255), (config.ICON_PADDING, y0, config.ICON_SIZE, config.ICON_SIZE), 3)
+        elif self.selected == 'small':
+            pygame.draw.rect(self.screen, (0, 0, 255), (config.ICON_PADDING, y1, config.ICON_SIZE, config.ICON_SIZE), 3)
+                        # draw entities
         for e in self.enemies:
             e.draw(self.screen)
         for t in self.towers:
             t.draw(self.screen)
-        # highlight allowed placement cells
-        for gx, gy in config.PLACEMENT_CELLS:
-            rect = pygame.Rect(
-                gx * config.GRID_SIZE,
-                gy * config.GRID_SIZE,
-                config.GRID_SIZE,
-                config.GRID_SIZE
-            )
-            pygame.draw.rect(self.screen, config.GREEN, rect, 3)
+
+        # draw tower preview at mouse if selected
+        if self.selected:
+            mouse_x, mouse_y = pygame.mouse.get_pos()
+            gx, gy = mouse_x // config.GRID_SIZE, mouse_y // config.GRID_SIZE
+            if (gx, gy) in config.PLACEMENT_CELLS and mouse_x > config.SHOP_WIDTH:
+                world_x = gx * config.GRID_SIZE + config.GRID_SIZE // 2
+                world_y = gy * config.GRID_SIZE + config.GRID_SIZE // 2
+                # semi-transparent preview
+                preview_img = CANNON_double if self.selected == 'double' else CANNON_small
+                preview = preview_img.copy()
+                preview.set_alpha(150)
+                rect = preview.get_rect(center=(world_x, world_y))
+                self.screen.blit(preview, rect.topleft)
+
+        # highlight hovered placement cell with translucent fill only if a tower is selected with translucent fill only if a tower is selected
+        if self.selected:
+            mouse_x, mouse_y = pygame.mouse.get_pos()
+            gx, gy = mouse_x // config.GRID_SIZE, mouse_y // config.GRID_SIZE
+            if (gx, gy) in config.PLACEMENT_CELLS and mouse_x > config.SHOP_WIDTH:
+                # determine color: green if affordable and not occupied, else red
+                if (gx, gy) not in self.occupied_cells and self.coins >= self.tower_costs[self.selected]:
+                    overlay_color = (*config.GREEN, 100)  # RGBA with alpha
+                else:
+                    overlay_color = (*config.RED, 100)
+                overlay = pygame.Surface((config.GRID_SIZE, config.GRID_SIZE), pygame.SRCALPHA)
+                overlay.fill(overlay_color)
+                self.screen.blit(overlay, (gx * config.GRID_SIZE, gy * config.GRID_SIZE))
         # display message
         if self.message and pygame.time.get_ticks() - self.msg_time < 2000:
             msg = font.render(self.message, True, config.RED)

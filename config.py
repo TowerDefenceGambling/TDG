@@ -12,16 +12,16 @@ ENEMY_SPEED = 2     # movement speed of enemies
 # Tower settings (cost, range in pixels, cooldown in ms, damage per shot)
 TOWER_CONFIG = {
     "double": {
-        "cost": 10,
-        "range": 350,
-        "cooldown": 3000,
-        "damage": 10,
-    },
-    "small": {
         "cost": 20,
         "range": 200,
-        "cooldown": 1000,
+        "cooldown": 2000,
         "damage": 35,
+    },
+    "small": {
+        "cost": 10,
+        "range": 350,
+        "cooldown": 1000,
+        "damage": 20,
     },
 }
 
