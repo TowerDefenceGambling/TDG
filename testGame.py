@@ -1,6 +1,8 @@
 import pygame
 import random
 import math
+from button import Button
+
 
 # Initialize Pygame
 pygame.init()
@@ -9,13 +11,23 @@ pygame.init()
 SCREEN_WIDTH = pygame.display.Info().current_w
 SCREEN_HEIGHT = pygame.display.Info().current_h
 
+
 # Grid and placement setup
 GRID_SIZE = 80  # size of one grid cell
 PLACEMENT_CELLS = [
-    (7, 8), (9, 8),
+    # Neben unterem vertikalem Pfadabschnitt (x=0.51 → Spalte 8)
+    (7, 8), (9, 8),  # links und rechts
+
+    # Neben horizontalem Teil (x=0.51 → 0.62, y=0.78 → Zeile 6)
     (6, 6), (10, 6),
+
+    # Neben vertikalem Pfadabschnitt bei x=0.62 (Spalte 9–10)
     (8, 5), (10, 5), (8, 4), (10, 4),
+
+    # Neben dem oberen horizontalen Teil (x=0.405 → Spalte 6)
     (5, 3), (7, 3),
+
+    # Neben oberstem vertikalen Abschnitt bei Spalte 6
     (5, 2), (7, 2), (5, 1), (7, 1),
 ]
 
@@ -23,27 +35,20 @@ PLACEMENT_CELLS = [
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
-GREEN = (0, 255, 0)
 GRAY = (169, 169, 169)
-
-# Icon, font, and shop sizes
-ICON_SIZE = 70
-ICON_PADDING = 10
-HUD_FONT_SIZE = 40
-SHOP_WIDTH = ICON_SIZE + ICON_PADDING * 2
 
 # Load and scale background image
 BACKGROUND_IMAGE = pygame.image.load("assets/images/level1/Tiles.png")
 BACKGROUND_IMAGE = pygame.transform.scale(BACKGROUND_IMAGE, (SCREEN_WIDTH, SCREEN_HEIGHT))
 
 # Load cannon images
-RAW_CANNON_DOUBLE = pygame.image.load("assets/images/tower/Cannon3.png")
-RAW_CANNON_SMALL = pygame.image.load("assets/images/tower/Cannon2.png")
+CANNON_double = pygame.image.load("assets/images/tower/Cannon3.png")
+CANNON_small = pygame.image.load("assets/images/tower/Cannon2.png")
 Bullet_image = pygame.image.load("assets/images/tower/Bullet_Cannon.png")
 
-# Scale cannon images for towers and selection icons
-CANNON_double = pygame.transform.scale(RAW_CANNON_DOUBLE, (ICON_SIZE, ICON_SIZE))
-CANNON_small = pygame.transform.scale(RAW_CANNON_SMALL, (ICON_SIZE, ICON_SIZE))
+# Scale cannon images
+CANNON_double = pygame.transform.scale(CANNON_double, (45, 45))
+CANNON_small = pygame.transform.scale(CANNON_small, (45, 45))
 
 # Define the path as a list of (x, y) coordinates in percentages
 PATH_PERCENTAGES = [
@@ -54,9 +59,6 @@ PATH_PERCENTAGES = [
 PATH = [(int(x * SCREEN_WIDTH), int(y * SCREEN_HEIGHT)) for x, y in PATH_PERCENTAGES]
 
 # Enemy class
-def draw_circle(screen, pos, color, radius):
-    pygame.draw.circle(screen, color, (int(pos[0]), int(pos[1])), radius)
-
 class Enemy:
     def __init__(self, path):
         self.path = path
@@ -67,18 +69,21 @@ class Enemy:
 
     def move(self):
         if self.path_index < len(self.path) - 1:
-            tx, ty = self.path[self.path_index + 1]
-            dx, dy = tx - self.x, ty - self.y
-            dist = math.hypot(dx, dy)
-            if dist:
-                dx, dy = dx / dist, dy / dist
-            self.x += dx * self.speed
-            self.y += dy * self.speed
-            if abs(self.x - tx) < self.speed and abs(self.y - ty) < self.speed:
+            target_x, target_y = self.path[self.path_index + 1]
+            direction_x = target_x - self.x
+            direction_y = target_y - self.y
+            distance = (direction_x ** 2 + direction_y ** 2) ** 0.5
+            direction_x /= distance
+            direction_y /= distance
+
+            self.x += direction_x * self.speed
+            self.y += direction_y * self.speed
+
+            if abs(self.x - target_x) < self.speed and abs(self.y - target_y) < self.speed:
                 self.path_index += 1
 
     def draw(self, screen):
-        draw_circle(screen, (self.x, self.y), RED, 10)
+        pygame.draw.circle(screen, RED, (int(self.x), int(self.y)), 10)
 
     def has_reached_end(self):
         return self.path_index >= len(self.path) - 1
@@ -90,62 +95,71 @@ class Bullet:
         self.y = y
         self.target = target
         self.speed = 10
-        self.image = pygame.transform.scale(Bullet_image, (20, 20))
-        self.radius = 10
+        # Load and scale the bullet image
+        self.image = pygame.transform.scale(Bullet_image, (20, 20))  # adjust size as needed
+        self.radius = 10  # Adjust hit radius as needed
 
     def move(self):
-        dx, dy = self.target.x - self.x, self.target.y - self.y
-        dist = math.hypot(dx, dy)
-        if dist:
-            dx, dy = dx / dist, dy / dist
-        self.x += dx * self.speed
-        self.y += dy * self.speed
+        direction_x = self.target.x - self.x
+        direction_y = self.target.y - self.y
+        distance = (direction_x ** 2 + direction_y ** 2) ** 0.5
+        direction_x /= distance
+        direction_y /= distance
+
+        self.x += direction_x * self.speed
+        self.y += direction_y * self.speed
 
     def draw(self, screen):
-        screen.blit(self.image, (int(self.x - 10), int(self.y - 10)))
+        # Draw the bullet as an image instead of a black circle
+        rotated_image = pygame.transform.rotate(self.image, 0)  # Rotate if needed
+        screen.blit(rotated_image, (int(self.x - self.image.get_width() / 2), int(self.y - self.image.get_height() / 2)))
 
     def has_hit_target(self):
-        return (self.target.x - self.x)**2 + (self.target.y - self.y)**2 <= self.radius**2
+        return (self.target.x - self.x) ** 2 + (self.target.y - self.y) ** 2 <= self.radius ** 2
 
-# Tower class
+# Tower class (now with selectable cannon types)
 class Tower:
     def __init__(self, x, y, cannon_type):
-        self.x, self.y = x, y
+        self.x = x
+        self.y = y
         self.cannon_type = cannon_type
-        self.range = 350 if cannon_type == "double" else 200
-        self.cooldown = 2000 if cannon_type == "double" else 1000
+        self.range = 150 if cannon_type == "double" else 100
+        self.damage = 20 if cannon_type == "double" else 10
+        self.cooldown = 2000 if cannon_type == "double" else 1000  # different cooldowns for cannon types
         self.last_shot = 0
         self.bullets = []
         self.target = None
         self.angle = 0
         self.image = CANNON_double if cannon_type == "double" else CANNON_small
 
-    def shoot(self, enemies, now):
-        if now - self.last_shot >= self.cooldown:
-            for e in enemies:
-                if (e.x - self.x)**2 + (e.y - self.y)**2 <= self.range**2:
-                    self.bullets.append(Bullet(self.x, self.y, e))
-                    self.target, self.last_shot = e, now
+    def shoot(self, enemies, current_time):
+        if current_time - self.last_shot >= self.cooldown:
+            for enemy in enemies:
+                if (enemy.x - self.x) ** 2 + (enemy.y - self.y) ** 2 <= self.range ** 2:
+                    self.bullets.append(Bullet(self.x, self.y, enemy))
+                    self.target = enemy
+                    self.last_shot = current_time
                     break
 
     def update_bullets(self):
-        for b in self.bullets[:]:
-            b.move()
-            if b.has_hit_target():
-                b.target.health = 0
-                self.bullets.remove(b)
+        for bullet in self.bullets:
+            bullet.move()
+            if bullet.has_hit_target():
+                bullet.target.health = 0
+                self.bullets.remove(bullet)
 
     def update_rotation(self):
         if self.target:
-            dx, dy = self.target.x - self.x, self.target.y - self.y
-            self.angle = math.degrees(math.atan2(-dy, dx)) - 90
+            direction_x = self.target.x - self.x
+            direction_y = self.target.y - self.y
+            self.angle = math.degrees(math.atan2(-direction_y, direction_x)) - 90
 
     def draw(self, screen):
-        rotated = pygame.transform.rotate(self.image, self.angle)
-        r = rotated.get_rect(center=(self.x, self.y))
-        screen.blit(rotated, r.topleft)
-        for b in self.bullets:
-            b.draw(screen)
+        rotated_image = pygame.transform.rotate(self.image, self.angle)
+        rotated_rect = rotated_image.get_rect(center=(self.x, self.y))
+        screen.blit(rotated_image, rotated_rect.topleft)
+        for bullet in self.bullets:
+            bullet.draw(screen)
 
 # Main game class
 class TowerDefenseGame:
@@ -154,15 +168,13 @@ class TowerDefenseGame:
         pygame.display.set_caption("Tower Defense Game")
         self.clock = pygame.time.Clock()
         self.running = True
-        self.enemies, self.towers = [], []
-        self.spawn_timer, self.spawn_interval = 0, 2000
-        self.lives = 10
-        # Münzsystem
-        self.coins = 15
-        self.coin_reward = 5
-        self.tower_costs = {"double": 20, "small": 10}
-        self.selected_cannon_type = "double"
-        self.message, self.message_timer = "", 0
+        self.enemies = []
+        self.towers = []
+        self.wave_number = 0
+        self.spawn_timer = 0
+        self.spawn_interval = 2000
+        self.lives = 50
+        self.selected_cannon_type = "double"  # Default selected cannon type
 
     def spawn_enemy(self):
         self.enemies.append(Enemy(PATH))
@@ -174,94 +186,165 @@ class TowerDefenseGame:
             self.draw()
             self.clock.tick(60)
 
+            keys = pygame.key.get_pressed()
+            if keys[pygame.K_ESCAPE]:  # Pausenmenü öffnen mit ESC
+                self.pause_menu()
+
+            if self.lives <= 0:
+                self.game_over_screen()
+
+
     def handle_events(self):
-        for ev in pygame.event.get():
-            if ev.type == pygame.QUIT:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
                 self.running = False
-            elif ev.type == pygame.MOUSEBUTTONDOWN:
+            elif event.type == pygame.MOUSEBUTTONDOWN:
                 x, y = pygame.mouse.get_pos()
-                # Calculate shop icon positions
-                font = pygame.font.SysFont(None, HUD_FONT_SIZE)
-                coins_h = font.render(f"Münzen: {self.coins}", True, BLACK).get_height()
-                lives_h = font.render(f"Lives: {self.lives}", True, BLACK).get_height()
-                y_start = ICON_PADDING*2 + coins_h + lives_h  # first icon y
-                y_double = y_start
-                y_small = y_double + ICON_SIZE + ICON_PADDING
-                # Double tower icon click
-                if ICON_PADDING <= x <= ICON_PADDING + ICON_SIZE and y_double <= y <= y_double + ICON_SIZE:
+
+                # Auswahlknöpfe für Tower-Typen
+                if 10 <= x <= 60 and 10 <= y <= 60:
                     self.selected_cannon_type = "double"
-                # Small tower icon click
-                if ICON_PADDING <= x <= ICON_PADDING + ICON_SIZE and y_small <= y <= y_small + ICON_SIZE:
+                elif 10 <= x <= 60 and 70 <= y <= 120:
                     self.selected_cannon_type = "small"
-                # Place tower
-                if x > SHOP_WIDTH:  # ensure click is in game area
-                    gx, gy = x//GRID_SIZE, y//GRID_SIZE
-                    if (gx, gy) in PLACEMENT_CELLS:
-                        cost = self.tower_costs[self.selected_cannon_type]
-                        if self.coins >= cost:
-                            self.coins -= cost
-                            wx, wy = gx*GRID_SIZE + GRID_SIZE//2, gy*GRID_SIZE + GRID_SIZE//2
-                            self.towers.append(Tower(wx, wy, self.selected_cannon_type))
-                        else:
-                            self.message, self.message_timer = f"Benötigt: {cost} Münzen", pygame.time.get_ticks()
+                else:
+                    # Berechne Grid-Position
+                    grid_x = x // GRID_SIZE
+                    grid_y = y // GRID_SIZE
+
+                    if (grid_x, grid_y) in PLACEMENT_CELLS:
+                        world_x = grid_x * GRID_SIZE + GRID_SIZE // 2
+                        world_y = grid_y * GRID_SIZE + GRID_SIZE // 2
+                        self.towers.append(Tower(world_x, world_y, self.selected_cannon_type))
+
+    
+
 
     def update(self):
-        now = pygame.time.get_ticks()
-        if now - self.spawn_timer > self.spawn_interval:
+        current_time = pygame.time.get_ticks()
+        if current_time - self.spawn_timer > self.spawn_interval:
             self.spawn_enemy()
-            self.spawn_timer = now
-        for e in self.enemies:
-            e.move()
-        for t in self.towers:
-            t.shoot(self.enemies, now)
-            t.update_bullets()
-            t.update_rotation()
-        for e in self.enemies[:]:
-            if e.has_reached_end():
+            self.spawn_timer = current_time
+
+        for enemy in self.enemies:
+            enemy.move()
+        for tower in self.towers:
+            tower.shoot(self.enemies, current_time)
+            tower.update_bullets()
+            tower.update_rotation()
+
+        # Check if any enemies have reached the end
+        for enemy in self.enemies:
+            if enemy.has_reached_end():
                 self.lives -= 1
-                self.enemies.remove(e)
-            elif e.health <= 0:
-                self.coins += self.coin_reward
-                self.enemies.remove(e)
+                self.enemies.remove(enemy)
+
+        # Remove dead enemies
+        self.enemies = [enemy for enemy in self.enemies if enemy.health > 0]
+
+        # End game if lives reach 0
         if self.lives <= 0:
             self.running = False
 
     def draw(self):
-        # Background and sidebar
         self.screen.blit(BACKGROUND_IMAGE, (0, 0))
-        pygame.draw.rect(self.screen, GRAY, (0, 0, SHOP_WIDTH, SCREEN_HEIGHT))
-        # Coins and lives
-        font = pygame.font.SysFont(None, HUD_FONT_SIZE)
-        coins_surf = font.render(f"Münzen: {self.coins}", True, BLACK)
-        lives_surf = font.render(f"Lives: {self.lives}", True, BLACK)
-        self.screen.blit(coins_surf, (ICON_PADDING, ICON_PADDING))
-        self.screen.blit(lives_surf, (ICON_PADDING, ICON_PADDING + coins_surf.get_height() + ICON_PADDING))
-        # Shop icons
-        y_start = ICON_PADDING*2 + coins_surf.get_height() + lives_surf.get_height()
-        y_double = y_start
-        y_small = y_double + ICON_SIZE + ICON_PADDING
-        # Button backgrounds
-        color_d = GREEN if self.coins >= self.tower_costs["double"] else RED
-        pygame.draw.rect(self.screen, color_d, (ICON_PADDING, y_double, ICON_SIZE, ICON_SIZE))
-        color_s = GREEN if self.coins >= self.tower_costs["small"] else RED
-        pygame.draw.rect(self.screen, color_s, (ICON_PADDING, y_small, ICON_SIZE, ICON_SIZE))
-        # Icons
-        self.screen.blit(CANNON_double, (ICON_PADDING, y_double))
-        self.screen.blit(CANNON_small, (ICON_PADDING, y_small))
-        # Game area
-        for e in self.enemies:
-            e.draw(self.screen)
-        for t in self.towers:
-            t.draw(self.screen)
-        # Grid debug
-        for gx, gy in PLACEMENT_CELLS:
-            pygame.draw.rect(self.screen, GREEN, (gx*GRID_SIZE, gy*GRID_SIZE, GRID_SIZE, GRID_SIZE), 2)
-        # Message
-        if self.message and pygame.time.get_ticks() - self.message_timer < 2000:
-            msg = font.render(self.message, True, RED)
-            self.screen.blit(msg, (SCREEN_WIDTH//2 - msg.get_width()//2, ICON_PADDING))
+        for enemy in self.enemies:
+            enemy.draw(self.screen)
+        for tower in self.towers:
+            tower.draw(self.screen)
+
+        # Draw lives
+        font = pygame.font.SysFont(None, 36)
+        lives_text = font.render(f"Lives: {self.lives}", True, BLACK)
+        self.screen.blit(lives_text, (10, 10))
+
+        # Draw cannon selection icons
+        pygame.draw.rect(self.screen, GRAY, (10, 10, 50, 50))  # Button for double cannon
+        pygame.draw.rect(self.screen, GRAY, (10, 70, 50, 50))  # Button for small cannon
+        self.screen.blit(CANNON_double, (10, 10))
+        self.screen.blit(CANNON_small, (10, 70))
+
+        # Draw placement grid (optional for debugging or player help)
+        for (gx, gy) in PLACEMENT_CELLS:
+            rect = pygame.Rect(gx * GRID_SIZE, gy * GRID_SIZE, GRID_SIZE, GRID_SIZE)
+            pygame.draw.rect(self.screen, (0, 255, 0), rect, 2)  # grüner Rahmen
+
+
         pygame.display.flip()
 
+
+    def pause_menu(self):
+        paused = True
+        font = pygame.font.SysFont(None, 72)
+        button_font = pygame.font.SysFont(None, 48)
+
+        resume_button = Button(None, (640, 250), "Resume", button_font, WHITE, RED)
+        exit_button = Button(None, (640, 330), "Exit", button_font, WHITE, RED)
+        volume_button = Button(None, (640, 410), "Toggle Sound", button_font, WHITE, RED)
+
+        while paused:
+            self.screen.fill((50, 50, 50))
+            pause_text = font.render("PAUSED", True, WHITE)
+            self.screen.blit(pause_text, pause_text.get_rect(center=(SCREEN_WIDTH // 2, 150)))
+
+            mouse_pos = pygame.mouse.get_pos()
+
+            for button in [resume_button, exit_button, volume_button]:
+                button.changeColor(mouse_pos)
+                button.update(self.screen)
+
+            pygame.display.flip()
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if resume_button.checkForInput(mouse_pos):
+                        paused = False
+                    elif exit_button.checkForInput(mouse_pos):
+                        self.running = False
+                        return
+                    elif volume_button.checkForInput(mouse_pos):
+                        vol = pygame.mixer.music.get_volume()
+                        pygame.mixer.music.set_volume(0.0 if vol > 0 else 1.0)
+
+    def game_over_screen(self):
+        font = pygame.font.SysFont(None, 72)
+        button_font = pygame.font.SysFont(None, 48)
+
+        restart_button = Button(None, (640, 300), "Restart", button_font, WHITE, RED)
+        exit_button = Button(None, (640, 380), "Exit", button_font, WHITE, RED)
+
+        while True:
+            self.screen.fill((0, 0, 0))
+            game_over_text = font.render("GAME OVER", True, RED)
+            self.screen.blit(game_over_text, game_over_text.get_rect(center=(SCREEN_WIDTH // 2, 150)))
+
+            mouse_pos = pygame.mouse.get_pos()
+
+            for button in [restart_button, exit_button]:
+                button.changeColor(mouse_pos)
+                button.update(self.screen)
+
+            pygame.display.flip()
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if restart_button.checkForInput(mouse_pos):
+                        self.__init__()  # Neustart
+                        self.run()
+                        return
+                    elif exit_button.checkForInput(mouse_pos):
+                        self.running = False
+                        return
+
+
+
+# Run the game
 if __name__ == "__main__":
-    TowerDefenseGame().run()
+    game = TowerDefenseGame()
+    game.run()
     pygame.quit()
