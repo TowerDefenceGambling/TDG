@@ -9,6 +9,26 @@ pygame.init()
 SCREEN_WIDTH = pygame.display.Info().current_w
 SCREEN_HEIGHT = pygame.display.Info().current_h
 
+
+# Grid and placement setup
+GRID_SIZE = 80  # size of one grid cell
+PLACEMENT_CELLS = [
+    # Neben unterem vertikalem Pfadabschnitt (x=0.51 → Spalte 8)
+    (7, 8), (9, 8),  # links und rechts
+
+    # Neben horizontalem Teil (x=0.51 → 0.62, y=0.78 → Zeile 6)
+    (6, 6), (10, 6),
+
+    # Neben vertikalem Pfadabschnitt bei x=0.62 (Spalte 9–10)
+    (8, 5), (10, 5), (8, 4), (10, 4),
+
+    # Neben dem oberen horizontalen Teil (x=0.405 → Spalte 6)
+    (5, 3), (7, 3),
+
+    # Neben oberstem vertikalen Abschnitt bei Spalte 6
+    (5, 2), (7, 2), (5, 1), (7, 1),
+]
+
 # Colors
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
@@ -170,14 +190,22 @@ class TowerDefenseGame:
                 self.running = False
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 x, y = pygame.mouse.get_pos()
-                # Check if user clicked on cannon selection buttons
+
+                # Auswahlknöpfe für Tower-Typen
                 if 10 <= x <= 60 and 10 <= y <= 60:
                     self.selected_cannon_type = "double"
                 elif 10 <= x <= 60 and 70 <= y <= 120:
                     self.selected_cannon_type = "small"
                 else:
-                    # Place tower with the selected cannon type
-                    self.towers.append(Tower(x, y, self.selected_cannon_type))
+                    # Berechne Grid-Position
+                    grid_x = x // GRID_SIZE
+                    grid_y = y // GRID_SIZE
+
+                    if (grid_x, grid_y) in PLACEMENT_CELLS:
+                        world_x = grid_x * GRID_SIZE + GRID_SIZE // 2
+                        world_y = grid_y * GRID_SIZE + GRID_SIZE // 2
+                        self.towers.append(Tower(world_x, world_y, self.selected_cannon_type))
+
 
     def update(self):
         current_time = pygame.time.get_ticks()
@@ -222,6 +250,12 @@ class TowerDefenseGame:
         pygame.draw.rect(self.screen, GRAY, (10, 70, 50, 50))  # Button for small cannon
         self.screen.blit(CANNON_double, (10, 10))
         self.screen.blit(CANNON_small, (10, 70))
+
+        # Draw placement grid (optional for debugging or player help)
+        for (gx, gy) in PLACEMENT_CELLS:
+            rect = pygame.Rect(gx * GRID_SIZE, gy * GRID_SIZE, GRID_SIZE, GRID_SIZE)
+            pygame.draw.rect(self.screen, (0, 255, 0), rect, 2)  # grüner Rahmen
+
 
         pygame.display.flip()
 
