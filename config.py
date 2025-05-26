@@ -2,7 +2,7 @@
 
 # Game settings
 INITIAL_LIVES = 10
-START_COINS = 15
+START_COINS = 20
 COIN_REWARD = 5
 
 # Enemy settings

@@ -28,6 +28,9 @@ RAW_ICON_DAMAGE   = pygame.image.load("assets/images/level1/damage_icon.png")
 RAW_ICON_RANGE    = pygame.image.load("assets/images/level1/sniper_icon.png")
 RAW_ICON_RELOAD   = pygame.image.load("assets/images/level1/magazine_icon.png")
 BULLET_IMG        = pygame.image.load("assets/images/tower/bullet_cannon.png")
+#Enemy
+RAW_ENEMY_IMG = pygame.image.load("assets/images/enemy/enemy_1.png")
+ENEMY_IMG = pygame.transform.scale(RAW_ENEMY_IMG, (config.GRID_SIZE, config.GRID_SIZE))
 
 # Scale icons
 CANNON_DOUBLE = pygame.transform.scale(RAW_CANNON_DOUBLE, (config.ICON_SIZE, config.ICON_SIZE))
@@ -55,6 +58,9 @@ class Enemy:
         self.x, self.y = path[0]
         self.speed = config.ENEMY_SPEED
         self.health = config.ENEMY_HEALTH
+        self.image = ENEMY_IMG
+        self.rect = self.image.get_rect(center=(self.x, self.y))
+        self.rotated_image = self.image 
 
     def move(self):
         if self.index < len(self.path) - 1:
@@ -67,6 +73,11 @@ class Enemy:
             self.y += dy * self.speed
             if abs(self.x - tx) < self.speed and abs(self.y - ty) < self.speed:
                 self.index += 1
+            self.rect.center = (self.x, self.y)
+
+            angle = math.degrees(math.atan2(-dy, dx)) - 90  # -90 weil die Grafik sonst "nach rechts" schaut
+            self.rotated_image = pygame.transform.rotate(ENEMY_IMG, angle)
+            self.rect = self.rotated_image.get_rect(center=(self.x, self.y))
 
     def draw(self, screen):
         bw = config.GRID_SIZE // 2
@@ -76,7 +87,7 @@ class Enemy:
         by = self.y - 20
         pygame.draw.rect(screen, config.RED, (bx, by, bw, bh))
         pygame.draw.rect(screen, config.GREEN, (bx, by, int(bw * ratio), bh))
-        draw_circle(screen, (self.x, self.y), config.RED, 10)
+        screen.blit(self.rotated_image, self.rect.topleft)
 
     def reached_end(self):
         return self.index >= len(self.path) - 1
