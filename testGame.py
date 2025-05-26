@@ -176,6 +176,11 @@ class TowerDefenseGame:
         self.upgrade_buttons = {}
         # Load upgrade definitions from config
         self.upgrade_defs = config.TOWER_UPGRADES
+        self.wave_active = False       # Is a wave currently spawning enemies?
+        self.enemies_spawned = 0       # How many enemies spawned in the current wave
+        self.enemy_spawn_interval = 1000  # 1 second between enemy spawns
+        self.wave_cooldown = 5000      # 5 seconds between waves
+        self.last_spawn_time = 0       # Time when last enemy was spawned   
 
     def spawn_enemy(self):
         self.enemies.append(Enemy(PATH))
@@ -256,14 +261,33 @@ class TowerDefenseGame:
 
     def update(self):
         now = pygame.time.get_ticks()
-        if now - self.spawn_timer > self.spawn_interval:
-            self.spawn_enemy()
-            self.spawn_timer = now
+
+        if not self.wave_active:
+            # Start new wave after cooldown
+            if now - self.last_spawn_time > self.wave_cooldown:
+                self.wave_active = True
+                self.enemies_spawned = 0
+
+        if self.wave_active:
+             # Spawn enemies one by one with interval
+            if self.enemies_spawned < 3:
+                if now - self.last_spawn_time > self.enemy_spawn_interval:
+                    self.spawn_enemy()
+                    self.enemies_spawned += 1
+                    self.last_spawn_time = now
+            else:
+            # All enemies spawned, end the wave
+                self.wave_active = False
+                self.last_spawn_time = now  # Reset cooldown timer for next wave
+
+        # Move enemies
         for e in self.enemies:
             e.move()
+        # Towers shooting
         for t in self.towers:
             t.shoot(self.enemies, now)
             t.update()
+        # Check enemies status
         for e in self.enemies[:]:
             if e.reached_end():
                 self.lives -= 1
@@ -273,6 +297,7 @@ class TowerDefenseGame:
                 self.enemies.remove(e)
         if self.lives <= 0:
             self.running = False
+
 
     def draw(self):
         self.screen.blit(BACKGROUND, (0,0))
