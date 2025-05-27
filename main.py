@@ -5,6 +5,7 @@ import saveUser as su
 import testGame as tg
 import json
 import os
+from level_selection import level_selection
 
 SETTINGS_FILE = "settings.json"
 
@@ -33,7 +34,6 @@ def load_settings():
         with open(SETTINGS_FILE, "r") as f:
             return json.load(f)
     else:
-        # Standardwerte, falls Datei nicht existiert
         return {
             "language": "Deutsch",
             "sound_on": True,
@@ -107,7 +107,6 @@ def options():
 
     languages = ["Deutsch", "English"]
 
-    # Setze Lautstärke und Soundstatus direkt beim Start der Optionen
     pygame.mixer.music.set_volume(volume / 100 if sound_on else 0)
     if sound_on:
         if not pygame.mixer.music.get_busy():
@@ -119,12 +118,10 @@ def options():
         OPTIONS_MOUSE_POS = pygame.mouse.get_pos()
         SCREEN.fill("white")
 
-        # Überschrift
         OPTIONS_TEXT = get_font(45).render("Options", True, "Black")
         OPTIONS_RECT = OPTIONS_TEXT.get_rect(center=(SCREEN_WIDTH//2, 50))
         SCREEN.blit(OPTIONS_TEXT, OPTIONS_RECT)
 
-        # Sprache-Auswahl
         lang_buttons = []
         for i, lang in enumerate(languages):
             btn = Button(
@@ -139,7 +136,6 @@ def options():
             btn.update(SCREEN)
             lang_buttons.append((btn, lang))
 
-        # Sound-An/Aus
         sound_text = get_font(30).render("Sound:", True, "Black")
         sound_rect = sound_text.get_rect(center=(SCREEN_WIDTH//2, 400))
         SCREEN.blit(sound_text, sound_rect)
@@ -156,7 +152,6 @@ def options():
         sound_button.changeColor(OPTIONS_MOUSE_POS)
         sound_button.update(SCREEN)
 
-        # Lautstärke-Bereich
         volume_label = get_font(30).render("Lautstärke", True, "Black")
         volume_label_rect = volume_label.get_rect(center=(SCREEN_WIDTH//2, 520))
         SCREEN.blit(volume_label, volume_label_rect)
@@ -186,7 +181,6 @@ def options():
         vol_up.changeColor(OPTIONS_MOUSE_POS)
         vol_up.update(SCREEN)
 
-        # Save-Button
         SAVE_BUTTON = Button(
             image=None,
             pos=(SCREEN_WIDTH//2, SCREEN_HEIGHT - 180),
@@ -198,7 +192,6 @@ def options():
         SAVE_BUTTON.changeColor(OPTIONS_MOUSE_POS)
         SAVE_BUTTON.update(SCREEN)
 
-        # Back-Button
         OPTIONS_BACK = Button(
             image=None,
             pos=(SCREEN_WIDTH//2, SCREEN_HEIGHT - 100),
@@ -216,14 +209,12 @@ def options():
                 sys.exit()
 
             if event.type == pygame.MOUSEBUTTONDOWN:
-                # Sprache auswählen
                 for btn, lang in lang_buttons:
                     if btn.checkForInput(OPTIONS_MOUSE_POS):
                         selected_language = lang
                         settings["language"] = selected_language
                         print(f"Sprache gewechselt zu {lang}")
 
-                # Sound an/aus toggle
                 if sound_button.checkForInput(OPTIONS_MOUSE_POS):
                     sound_on = not sound_on
                     settings["sound_on"] = sound_on
@@ -235,7 +226,6 @@ def options():
                         pygame.mixer.music.stop()
                     print(f"Sound {'an' if sound_on else 'aus'}")
 
-                # Lautstärke erhöhen (max 100)
                 if vol_up.checkForInput(OPTIONS_MOUSE_POS):
                     if volume < 100:
                         volume += 10
@@ -244,7 +234,6 @@ def options():
                             pygame.mixer.music.set_volume(volume / 100)
                         print(f"Lautstärke erhöht auf {volume}")
 
-                # Lautstärke verringern (min 0)
                 if vol_down.checkForInput(OPTIONS_MOUSE_POS):
                     if volume > 0:
                         volume -= 10
@@ -253,12 +242,10 @@ def options():
                             pygame.mixer.music.set_volume(volume / 100)
                         print(f"Lautstärke verringert auf {volume}")
 
-                # Einstellungen speichern (Save-Button)
                 if SAVE_BUTTON.checkForInput(OPTIONS_MOUSE_POS):
                     save_settings(settings)
                     print("Einstellungen gespeichert!")
 
-                # Zurück zum Hauptmenü
                 if OPTIONS_BACK.checkForInput(OPTIONS_MOUSE_POS):
                     main_menu()
 
@@ -307,7 +294,6 @@ def main_menu():
             hovering_color="White"
         )
 
-        # Login/Logout button
         if not login_status:
             LOGIN_BUTTON = Button(
                 image=None,
@@ -341,8 +327,7 @@ def main_menu():
                 sys.exit()
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if PLAY_BUTTON.checkForInput(MENU_MOUSE_POS):
-                    play_game = tg.TowerDefenseGame()
-                    play_game.run()
+                    level_selection()
                 if OPTIONS_BUTTON.checkForInput(MENU_MOUSE_POS):
                     options()
                 if login_status and 'LOGOUT_BUTTON' in locals() and LOGOUT_BUTTON.checkForInput(MENU_MOUSE_POS):
