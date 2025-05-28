@@ -2,11 +2,7 @@
 
 # Game settings
 INITIAL_LIVES = 15  # Number of lives at game start
-<<<<<<< HEAD
-START_COINS   = 25  # Starting coins
-=======
 START_COINS   = 2500  # Starting coins
->>>>>>> main
 COIN_REWARD   = 7   # Coins earned per enemy kill
 
 # Enemy settings
@@ -18,11 +14,7 @@ TOWER_CONFIG = {
     "double": {
         "cost":     12,
         "range":    180,
-<<<<<<< HEAD
-        "cooldown":  900,
-=======
         "cooldown":  1300,
->>>>>>> main
         "damage":   15,
     },
     "small": {
@@ -46,16 +38,6 @@ TOWER_UPGRADES = {
 GRID_SIZE = 70  # Size of each grid cell in pixels
 # Define your valid placement cell coordinates here
 PLACEMENT_CELLS = [
-<<<<<<< HEAD
-    (10, 6),
-    (10, 3), (10, 8),
-    (10, 5), (10, 4),
-    (11, 8), (12, 8), (10, 2), (10, 1),(10, 0), (8, 0),
-    (8, 1), (8, 2), (8, 3), (8, 4), (8, 5), (8, 6), (8, 7), (8, 8),
-    (9, 8), (13, 8),(13, 9), (12, 9), (11, 9), (11, 10), (11, 11), (11 ,12),
-    (13, 11), (13, 12), (14, 11), (15, 11), (16, 10), (16, 9), (16, 8), (16, 7),
-    (14, 6), (13, 6), (12, 6), (11, 6)
-=======
     (8, 0),
     (8, 1),
     (8, 2),
@@ -140,7 +122,6 @@ PLACEMENT_CELLS = [
     (19, 11),
     (19, 12),
     (19, 13),
->>>>>>> main
 ]
 
 # HUD and UI settings
@@ -166,3 +147,4 @@ PATH_PERCENTAGES = [
     (0.405, 0.53),
     (0.405, 0.00),
 ]
+
