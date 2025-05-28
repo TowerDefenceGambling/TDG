@@ -10,6 +10,7 @@ from level_selection import level_selection
 SETTINGS_FILE = "settings.json"
 
 # Initialize Pygame
+# Initialize Pygame
 pygame.init()
 pygame.mixer.init()
 
@@ -24,6 +25,7 @@ SCREEN = pygame.display.set_mode(
 )
 pygame.display.set_caption("Menu")
 
+# Load background image
 # Load background image
 BG = pygame.image.load("assets/images/start_screen/Background1.png")
 BG = pygame.transform.scale(BG, (SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -230,6 +232,7 @@ def options():
                 pygame.quit()
                 sys.exit()
 
+
             if event.type == pygame.MOUSEBUTTONDOWN:
                 for btn, lang in lang_buttons:
                     if btn.checkForInput(OPTIONS_MOUSE_POS):
@@ -276,6 +279,9 @@ def options():
 
 
 def main_menu():
+    settings = load_settings()
+    play_background_music(settings["volume"], settings["sound_on"])
+
     settings = load_settings()
     play_background_music(settings["volume"], settings["sound_on"])
 
