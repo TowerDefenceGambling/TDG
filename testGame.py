@@ -3,6 +3,7 @@ import random
 import math
 import sys
 import config
+import pause
 from button import Button
 
 # Initialize Pygame
@@ -271,6 +272,22 @@ class TowerDefenseGame:
         self.enemy_spawn_interval = 1000
         self.wave_cooldown = 5000
         self.last_spawn_time = 0
+        self.lives = config.INITIAL_LIVES
+        self.coins = config.START_COINS
+        self.coin_reward = config.COIN_REWARD
+        self.selected = None
+        self.selected_tower = None
+        self.message = ''
+        self.msg_time = 0
+        self.upgrade_buttons = {}
+        # Upgrade definitions loaded from config
+        self.upgrade_defs = config.TOWER_UPGRADES
+        self.wave_active = False
+        self.enemies_spawned = 0
+        self.enemy_spawn_interval = 1000
+        self.wave_cooldown = 5000
+        self.last_spawn_time = 0
+        self.volume = 5
 
     def spawn_enemy(self):
         self.enemies.append(Enemy(PATH))
@@ -362,7 +379,8 @@ class TowerDefenseGame:
             if ev.type == pygame.QUIT:
                 self.running = False
             elif ev.type == pygame.KEYDOWN and ev.key == pygame.K_ESCAPE:
-                self.pause_menu()
+                p = pause.Pause(self)
+                p.pause_menu()
             elif ev.type == pygame.KEYDOWN and ev.key == pygame.K_d:
                 # Toggle Dev Mode (d)
                 self.dev_mode = not self.dev_mode
@@ -605,89 +623,26 @@ class TowerDefenseGame:
             mtxt=font.render(self.message,True,config.RED); self.screen.blit(mtxt,(SCREEN_WIDTH//2-mtxt.get_width()//2,config.ICON_PADDING))
         pygame.display.flip()
 
-    def pause_menu(self):
-        paused = True
-        font_large = pygame.font.SysFont(None, 72)
-        font_btn = pygame.font.SysFont(None, 48)
-
-        resume_btn = Button(None, (SCREEN_WIDTH//2, SCREEN_HEIGHT//2 - 90), "Resume", font_btn, config.WHITE, config.RED)
-        options_btn = Button(None, (SCREEN_WIDTH//2, SCREEN_HEIGHT//2 - 30), "Options", font_btn, config.WHITE, config.RED)
-        exit_btn = Button(None, (SCREEN_WIDTH//2, SCREEN_HEIGHT//2 + 30), "Exit", font_btn, config.WHITE, config.RED)
-
-        options_menu = False
-        volume = getattr(self, 'volume', 5)  # falls self.volume schon existiert, sonst 5
-
-        while paused:
-            self.screen.fill((50, 50, 50))
-            t = font_large.render("PAUSED", True, config.WHITE)
-            self.screen.blit(t, t.get_rect(center=(SCREEN_WIDTH//2, 150)))
-
-            mpos = pygame.mouse.get_pos()
-
-            if not options_menu:
-                for b in [resume_btn, options_btn, exit_btn]:
-                    b.changeColor(mpos)
-                    b.update(self.screen)
-                pygame.display.flip()
-
-                for ev in pygame.event.get():
-                    if ev.type == pygame.QUIT:
-                        pygame.quit()
-                        sys.exit()
-                    if ev.type == pygame.MOUSEBUTTONDOWN:
-                        if resume_btn.checkForInput(mpos):
-                            paused = False
-                        elif options_btn.checkForInput(mpos):
-                            options_menu = True
-                        elif exit_btn.checkForInput(mpos):
-                            self.running = False
-                            return
-            else:
-                # Options-Menü mit Lautstärke-Regler
-                self.screen.fill((30, 30, 30))
-                opt_title = font_large.render("OPTIONS", True, config.WHITE)
-                self.screen.blit(opt_title, opt_title.get_rect(center=(SCREEN_WIDTH//2, 150)))
-
-                vol_text = font_btn.render(f"Volume: {volume}", True, config.WHITE)
-                self.screen.blit(vol_text, (SCREEN_WIDTH//2 - vol_text.get_width()//2, SCREEN_HEIGHT//2 - 30))
-
-                back_btn = Button(None, (SCREEN_WIDTH//2, SCREEN_HEIGHT//2 + 60), "Back", font_btn, config.WHITE, config.RED)
-                back_btn.changeColor(mpos)
-                back_btn.update(self.screen)
-                pygame.display.flip()
-
-                for ev in pygame.event.get():
-                    if ev.type == pygame.QUIT:
-                        pygame.quit()
-                        sys.exit()
-                    if ev.type == pygame.KEYDOWN:
-                        if ev.key == pygame.K_UP and volume < 10:
-                            volume += 1
-                            self.set_volume(volume)
-                        elif ev.key == pygame.K_DOWN and volume > 0:
-                            volume -= 1
-                            self.set_volume(volume)
-                    if ev.type == pygame.MOUSEBUTTONDOWN:
-                        if back_btn.checkForInput(mpos):
-                            options_menu = False
-
-        self.volume = volume  # Lautstärke speichern
-
 
     def game_over_screen(self):
         font_large = pygame.font.SysFont(None, 72)
         font_btn = pygame.font.SysFont(None, 48)
-        restart_btn = Button(None, (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 60), "Restart", font_btn, config.WHITE, config.RED)
-        options_btn = Button(None, (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2), "Options", font_btn, config.WHITE, config.RED)
-        exit_btn = Button(None, (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 60), "Exit", font_btn, config.WHITE, config.RED)
+
+        # Hintergrundbild laden und skalieren
+        bg_image = pygame.image.load("assets/images/start_screen/Background1.png").convert()
+        bg_image = pygame.transform.scale(bg_image, (SCREEN_WIDTH, SCREEN_HEIGHT))
+
+        restart_btn = Button(None, (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 30), "Restart", font_btn, config.WHITE, config.RED)
+        exit_btn = Button(None, (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 30), "Exit", font_btn, config.WHITE, config.RED)
 
         while True:
-            self.screen.fill((0, 0, 0))
+            self.screen.blit(bg_image, (0, 0))  # Hintergrund zeichnen
+
             title_surf = font_large.render("GAME OVER", True, config.RED)
             self.screen.blit(title_surf, title_surf.get_rect(center=(SCREEN_WIDTH // 2, 150)))
 
             mouse_pos = pygame.mouse.get_pos()
-            for btn in [restart_btn, options_btn, exit_btn]:
+            for btn in [restart_btn, exit_btn]:
                 btn.changeColor(mouse_pos)
                 btn.update(self.screen)
 
@@ -698,11 +653,10 @@ class TowerDefenseGame:
                     pygame.quit()
                     sys.exit()
 
+
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     if restart_btn.checkForInput(mouse_pos):
-                        return  # restart game
-                    elif options_btn.checkForInput(mouse_pos):
-                        self.show_options()
+                        return  # Spiel neustarten
                     elif exit_btn.checkForInput(mouse_pos):
                         self.running = False
                         return
@@ -710,42 +664,8 @@ class TowerDefenseGame:
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_r:
                         return
-                    elif event.key == pygame.K_o:
-                        self.show_options()
                     elif event.key == pygame.K_e:
                         self.running = False
-                        return
-
-    def show_options(self):
-        # Einfaches Optionsmenü als Platzhalter
-        font_large = pygame.font.SysFont(None, 72)
-        font_btn = pygame.font.SysFont(None, 48)
-        back_btn = Button(None, (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 100), "Back", font_btn, config.WHITE, config.RED)
-
-        while True:
-            self.screen.fill((30, 30, 30))
-            title_surf = font_large.render("OPTIONS", True, config.WHITE)
-            self.screen.blit(title_surf, title_surf.get_rect(center=(SCREEN_WIDTH // 2, 150)))
-
-            mouse_pos = pygame.mouse.get_pos()
-            back_btn.changeColor(mouse_pos)
-            back_btn.update(self.screen)
-
-            # Hier kannst du weitere Options-Elemente hinzufügen
-
-            pygame.display.flip()
-
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    sys.exit()
-
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    if back_btn.checkForInput(mouse_pos):
-                        return  # zurück zum Game Over Screen
-
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_ESCAPE:
                         return
 
 
