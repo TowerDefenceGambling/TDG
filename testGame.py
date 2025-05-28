@@ -17,31 +17,35 @@ screen = pygame.display.set_mode(
 pygame.display.set_caption("Tower Defense")
 
 # Load assets
-BACKGROUND = pygame.image.load("assets/images/level1/tiles.png")
-BACKGROUND = pygame.transform.scale(BACKGROUND, (SCREEN_WIDTH, SCREEN_HEIGHT))
-RAW_CANNON_DOUBLE = pygame.image.load("assets/images/tower/Cannon3.png")
-RAW_CANNON_SMALL  = pygame.image.load("assets/images/tower/Cannon2.png")
+BACKGROUND = pygame.transform.scale(
+    pygame.image.load("assets/images/level1/tiles.png"),
+    (SCREEN_WIDTH, SCREEN_HEIGHT)
+)
+RAW_CANNON_DOUBLE = pygame.image.load("assets/images/tower/Cannon2.png")
+RAW_CANNON_SMALL  = pygame.image.load("assets/images/tower/Cannon3.png")
 RAW_COIN_ICON     = pygame.image.load("assets/images/level1/coin.png")
 RAW_HEART_ICON    = pygame.image.load("assets/images/level1/heart_icon.png")
 # Upgrade icons
+RAW_UPGRADE_ICON = pygame.image.load("assets/images/level1/upgrade_icon.png")
 RAW_ICON_DAMAGE   = pygame.image.load("assets/images/level1/damage_icon.png")
 RAW_ICON_RANGE    = pygame.image.load("assets/images/level1/sniper_icon.png")
 RAW_ICON_RELOAD   = pygame.image.load("assets/images/level1/magazine_icon.png")
 BULLET_IMG        = pygame.image.load("assets/images/tower/bullet_cannon.png")
-#Enemy
-RAW_ENEMY_IMG = pygame.image.load("assets/images/enemy/enemy_1.png")
-ENEMY_IMG = pygame.transform.scale(RAW_ENEMY_IMG, (config.GRID_SIZE, config.GRID_SIZE))
+# Enemy image
+RAW_ENEMY_IMG     = pygame.image.load("assets/images/enemy/enemy_1.png")
 
-# Scale icons
+# Scale icons and images
 CANNON_DOUBLE = pygame.transform.scale(RAW_CANNON_DOUBLE, (config.ICON_SIZE, config.ICON_SIZE))
 CANNON_SMALL  = pygame.transform.scale(RAW_CANNON_SMALL,  (config.ICON_SIZE, config.ICON_SIZE))
 COIN_ICON     = pygame.transform.scale(RAW_COIN_ICON,    (config.HUD_FONT_SIZE, config.HUD_FONT_SIZE))
 HEART_ICON    = pygame.transform.scale(RAW_HEART_ICON,   (config.HUD_FONT_SIZE, config.HUD_FONT_SIZE))
+UPGRADE_ICON  = pygame.transform.scale(RAW_UPGRADE_ICON, (config.ICON_SIZE, config.ICON_SIZE))
 ICON_DAMAGE   = pygame.transform.scale(RAW_ICON_DAMAGE,   (config.ICON_SIZE, config.ICON_SIZE))
 ICON_RANGE    = pygame.transform.scale(RAW_ICON_RANGE,    (config.ICON_SIZE, config.ICON_SIZE))
 ICON_RELOAD   = pygame.transform.scale(RAW_ICON_RELOAD,   (config.ICON_SIZE, config.ICON_SIZE))
+ENEMY_IMG     = pygame.transform.scale(RAW_ENEMY_IMG,    (config.GRID_SIZE, config.GRID_SIZE))
 
-# Precompute path
+# Path
 PATH = [(int(x * SCREEN_WIDTH), int(y * SCREEN_HEIGHT)) for x, y in config.PATH_PERCENTAGES]
 
 # Helper functions
@@ -58,9 +62,8 @@ class Enemy:
         self.x, self.y = path[0]
         self.speed = config.ENEMY_SPEED
         self.health = config.ENEMY_HEALTH
-        self.image = ENEMY_IMG
-        self.rect = self.image.get_rect(center=(self.x, self.y))
-        self.rotated_image = self.image 
+        self.rotated_image = ENEMY_IMG
+        self.rect = self.rotated_image.get_rect(center=(self.x, self.y))
 
     def move(self):
         if self.index < len(self.path) - 1:
@@ -68,14 +71,13 @@ class Enemy:
             dx, dy = tx - self.x, ty - self.y
             dist = math.hypot(dx, dy)
             if dist:
-                dx, dy = dx / dist, dy / dist
+                dx, dy = dx/dist, dy/dist
             self.x += dx * self.speed
             self.y += dy * self.speed
             if abs(self.x - tx) < self.speed and abs(self.y - ty) < self.speed:
                 self.index += 1
             self.rect.center = (self.x, self.y)
-
-            angle = math.degrees(math.atan2(-dy, dx)) - 90  # -90 weil die Grafik sonst "nach rechts" schaut
+            angle = math.degrees(math.atan2(-dy, dx)) - 90
             self.rotated_image = pygame.transform.rotate(ENEMY_IMG, angle)
             self.rect = self.rotated_image.get_rect(center=(self.x, self.y))
 
@@ -105,7 +107,7 @@ class Bullet:
         dy = self.target.y - self.y
         dist = math.hypot(dx, dy)
         if dist:
-            dx, dy = dx / dist, dy / dist
+            dx, dy = dx/dist, dy/dist
         self.x += dx * self.speed
         self.y += dy * self.speed
 
@@ -127,6 +129,8 @@ class Tower:
         self.bullets = []
         self.target = None
         self.image = CANNON_DOUBLE if ttype == 'double' else CANNON_SMALL
+        # Combined upgrade level (0–3)
+        self.level = 0
 
     def shoot(self, enemies, now):
         if now - self.last_shot >= self.cooldown:
@@ -174,13 +178,13 @@ class TowerDefenseGame:
         self.message = ''
         self.msg_time = 0
         self.upgrade_buttons = {}
-        # Load upgrade definitions from config
+        # Upgrade definitions loaded from config
         self.upgrade_defs = config.TOWER_UPGRADES
-        self.wave_active = False       # Is a wave currently spawning enemies?
-        self.enemies_spawned = 0       # How many enemies spawned in the current wave
-        self.enemy_spawn_interval = 1000  # 1 second between enemy spawns
-        self.wave_cooldown = 5000      # 5 seconds between waves
-        self.last_spawn_time = 0       # Time when last enemy was spawned   
+        self.wave_active = False
+        self.enemies_spawned = 0
+        self.enemy_spawn_interval = 1000
+        self.wave_cooldown = 5000
+        self.last_spawn_time = 0
 
     def spawn_enemy(self):
         self.enemies.append(Enemy(PATH))
@@ -195,26 +199,39 @@ class TowerDefenseGame:
         return None
 
     def _handle_upgrade_click(self, x, y):
+        # Combined upgrade: increase damage, range, and reload by level-defined values (max 3 levels)
         if not self.selected_tower:
             return False
-        pw = 260
+        pw = 200
         px = SCREEN_WIDTH - pw
         if x < px:
             return False
-        for opt, rect in self.upgrade_buttons.items():
-            if rect.collidepoint(x, y):
-                d = self.upgrade_defs[opt]
-                cost = d['cost']
-                if self.coins >= cost:
-                    self.coins -= cost
-                    if 'increment' in d:
-                        setattr(self.selected_tower, opt.lower(), getattr(self.selected_tower, opt.lower()) + d['increment'])
-                    else:
-                        self.selected_tower.cooldown = max(100, self.selected_tower.cooldown - d['decrement'])
+        # Upgrade button area
+        rect = pygame.Rect(px + 10, 50, pw - 20, config.ICON_SIZE)
+        if rect.collidepoint(x, y):
+            lvl = self.selected_tower.level
+            if lvl >= 3:
+                self.message = "Turm bereits maximal aufgewertet"
+            else:
+                next_lvl = lvl + 1
+                defs = self.upgrade_defs.get(next_lvl)
+                if not defs:
+                    self.message = "Kein Upgrade definiert"
                 else:
-                    self.message = f"Upgrade benötigt: {cost} Münzen"
-                    self.msg_time = pygame.time.get_ticks()
-                return True
+                    cost = defs['cost']
+                    if self.coins < cost:
+                        self.message = f"Upgrade benötigt: {cost} Münzen"
+                    else:
+                        self.coins -= cost
+                        self.selected_tower.damage += defs['Damage']
+                        self.selected_tower.range += defs['Range']
+                        self.selected_tower.cooldown = max(
+                            100,
+                            self.selected_tower.cooldown - defs['Reload']
+                        )
+                        self.selected_tower.level = next_lvl
+            self.msg_time = pygame.time.get_ticks()
+            return True
         return False
 
     def handle_events(self):
@@ -225,6 +242,8 @@ class TowerDefenseGame:
                 self.pause_menu()
             elif ev.type == pygame.MOUSEBUTTONDOWN:
                 x, y = pygame.mouse.get_pos()
+                # First...
+
                 if self._handle_upgrade_click(x, y):
                     return
                 for tw in self.towers:
@@ -312,10 +331,40 @@ class TowerDefenseGame:
         self.screen.blit(lives_txt, (config.ICON_PADDING+HEART_ICON.get_width()+5, config.ICON_PADDING+COIN_ICON.get_height()+config.ICON_PADDING))
         # Tower icons
         y0 = config.ICON_PADDING*2 + COIN_ICON.get_height() + HEART_ICON.get_height()
-        cd = config.GREEN if self.coins>=config.TOWER_CONFIG['double']['cost'] else config.RED
-        pygame.draw.rect(self.screen,cd,(config.ICON_PADDING,y0,config.ICON_SIZE,config.ICON_SIZE)); self.screen.blit(CANNON_DOUBLE,(config.ICON_PADDING,y0))
-        y1=y0+config.ICON_SIZE+config.ICON_PADDING; cs=config.GREEN if self.coins>=config.TOWER_CONFIG['small']['cost'] else config.RED
-        pygame.draw.rect(self.screen,cs,(config.ICON_PADDING,y1,config.ICON_SIZE,config.ICON_SIZE)); self.screen.blit(CANNON_SMALL,(config.ICON_PADDING,y1))
+        # draw double cannon button background and icon
+        cd = config.GREEN if self.coins >= config.TOWER_CONFIG['double']['cost'] else config.RED
+        pygame.draw.rect(self.screen, cd, (config.ICON_PADDING, y0, config.ICON_SIZE, config.ICON_SIZE))
+        self.screen.blit(CANNON_DOUBLE, (config.ICON_PADDING, y0))
+        # highlight selected tower type in blue
+        if self.selected == 'double':
+            pygame.draw.rect(
+                self.screen,
+                config.BLUE,
+                (
+                    config.ICON_PADDING - 3,
+                    y0 - 3,
+                    config.ICON_SIZE + 6,
+                    config.ICON_SIZE + 6
+                ),
+                width=3
+            )
+        # small cannon button
+        y1 = y0 + config.ICON_SIZE + config.ICON_PADDING
+        cs = config.GREEN if self.coins >= config.TOWER_CONFIG['small']['cost'] else config.RED
+        pygame.draw.rect(self.screen, cs, (config.ICON_PADDING, y1, config.ICON_SIZE, config.ICON_SIZE))
+        self.screen.blit(CANNON_SMALL, (config.ICON_PADDING, y1))
+        if self.selected == 'small':
+            pygame.draw.rect(
+                self.screen,
+                config.BLUE,
+                (
+                    config.ICON_PADDING - 3,
+                    y1 - 3,
+                    config.ICON_SIZE + 6,
+                    config.ICON_SIZE + 6
+                ),
+                width=3
+            )
         # Preview and hover
         if self.selected:
             mx,my=pygame.mouse.get_pos(); gx,gy=mx//config.GRID_SIZE,my//config.GRID_SIZE
@@ -329,20 +378,44 @@ class TowerDefenseGame:
         # Draw entities
         for e in self.enemies: e.draw(self.screen)
         for t in self.towers: t.draw(self.screen)
-        # Upgrade panel
+        # Upgrade panel (combined)
         if self.selected_tower:
-            pw=260; px=SCREEN_WIDTH-pw
-            pygame.draw.rect(self.screen,config.WHITE,(px,0,pw,SCREEN_HEIGHT))
-            font_small=load_font(24)
-            y=20
-            for key, icon in [('Damage',ICON_DAMAGE),('Range',ICON_RANGE),('Reload',ICON_RELOAD)]:
-                self.screen.blit(icon,(px+10,y))
-                cost=self.upgrade_defs[key]['cost']
-                cost_txt=font_small.render(f"{cost}",True,config.BLACK)
-                self.screen.blit(COIN_ICON,(px+10+icon.get_width()+5,y+(icon.get_height()-COIN_ICON.get_height())//2))
-                self.screen.blit(cost_txt,(px+10+icon.get_width()+5+COIN_ICON.get_width()+2,y+(icon.get_height()-cost_txt.get_height())//2))
-                rect=pygame.Rect(px+10,y,pw-20,icon.get_height())
-                pygame.draw.rect(self.screen,config.GREEN,rect,2); self.upgrade_buttons[key]=rect; y+=icon.get_height()+15
+            pw = 200
+            px = SCREEN_WIDTH - pw
+            pygame.draw.rect(self.screen, config.WHITE, (px, 0, pw, SCREEN_HEIGHT))
+            font_small = load_font(24)
+            # show current level
+            lvl = self.selected_tower.level
+            roman = ['', 'I', 'II', 'III'][lvl]
+            lvl_surf = font_small.render(f"Stufe: {roman}", True, config.BLACK)
+            self.screen.blit(lvl_surf, (px + 10, 10))
+            # upgrade button
+            rect = pygame.Rect(px + 10, 50, pw - 20, config.ICON_SIZE)
+            # determine cost for next level
+            if lvl < 3:
+                next_lvl = lvl + 1
+                cost = config.TOWER_UPGRADES[next_lvl]['cost']
+            else:
+                cost = 0
+            border_color = config.GREEN if lvl < 3 and self.coins >= cost else config.RED
+            pygame.draw.rect(self.screen, border_color, rect, 2)
+            # draw upgrade icon
+            self.screen.blit(UPGRADE_ICON, (rect.x + 5, rect.y))
+            # draw cost next to icon
+            cost_x = rect.x + 5 + UPGRADE_ICON.get_width() + 5
+            self.screen.blit(COIN_ICON, (cost_x, rect.y + (config.ICON_SIZE - COIN_ICON.get_height()) // 2))
+            cost_surf = font_small.render(str(cost), True, config.BLACK)
+            self.screen.blit(cost_surf, (
+                cost_x + COIN_ICON.get_width() + 5,
+                rect.y + (config.ICON_SIZE - cost_surf.get_height()) // 2
+            ))
+            # draw button label
+            btn_label = "Upgrade" if lvl < 3 else "Maxed"
+            label_surf = font_small.render(btn_label, True, config.BLACK)
+            # position label centered in rect
+            label_x = rect.x + (rect.width - label_surf.get_width()) // 2
+            label_y = rect.y + rect.height + 5
+            self.screen.blit(label_surf, (label_x, label_y))
         # Message
         if self.message and pygame.time.get_ticks()-self.msg_time<2000:
             mtxt=font.render(self.message,True,config.RED); self.screen.blit(mtxt,(SCREEN_WIDTH//2-mtxt.get_width()//2,config.ICON_PADDING))

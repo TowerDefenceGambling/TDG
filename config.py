@@ -1,32 +1,42 @@
 # Configuration file for Tower Defense Game
 
 # Game settings
-INITIAL_LIVES = 10
-START_COINS = 20
-COIN_REWARD = 5
+INITIAL_LIVES = 15  # Number of lives at game start
+START_COINS   = 25  # Starting coins
+COIN_REWARD   = 7   # Coins earned per enemy kill
 
 # Enemy settings
-ENEMY_HEALTH = 100  # initial health of each enemy
-ENEMY_SPEED = 2     # movement speed of enemies
+ENEMY_HEALTH = 120   # Initial health of each enemy
+ENEMY_SPEED  = 1.2   # Movement speed of enemies
 
-# Tower settings (cost, range in pixels, cooldown in ms, damage per shot)
+# Tower settings (cost in coins, range in pixels, cooldown in ms, damage per shot)
 TOWER_CONFIG = {
     "double": {
-        "cost": 20,
-        "range": 200,
-        "cooldown": 2000,
-        "damage": 35,
+        "cost":     12,
+        "range":    180,
+        "cooldown":  900,
+        "damage":   15,
     },
     "small": {
-        "cost": 10,
-        "range": 350,
-        "cooldown": 1000,
-        "damage": 20,
+        "cost":     25,
+        "range":    300,
+        "cooldown": 1800,
+        "damage":   40,
     },
 }
 
+# Level-based upgrades: values & cost per level
+# Level 1: +10 damage, +15 range, -200ms reload, cost 60 coins
+# Level 2: +15 damage, +20 range, -250ms reload, cost 90 coins
+# Level 3: +20 damage, +25 range, -300ms reload, cost 120 coins
+TOWER_UPGRADES = {
+    1: {'Damage': 5,  'Range': 10, 'Reload': 100, 'cost': 40},  # +30% DPS on Level 1
+    2: {'Damage': 10, 'Range': 15, 'Reload': 150, 'cost': 80},  # +60% DPS total on Level 2
+    3: {'Damage': 20, 'Range': 20, 'Reload': 200, 'cost': 120}, # +100% DPS total on Level 3
+}
 # Grid and placement cells
-GRID_SIZE = 80  # size of each grid cell in pixels
+GRID_SIZE = 70  # Size of each grid cell in pixels
+# Define your valid placement cell coordinates here
 PLACEMENT_CELLS = [
     (10, 6),
     (10, 3), (10, 8),
@@ -39,31 +49,25 @@ PLACEMENT_CELLS = [
 ]
 
 # HUD and UI settings
-ICON_SIZE = 70        # size for tower and coin icons in pixels
-ICON_PADDING = 10     # padding around icons in pixels
-HUD_FONT_SIZE = 40    # font size for HUD text
-SHOP_WIDTH = ICON_SIZE + ICON_PADDING * 2  # width of the shop sidebar
+ICON_SIZE      = 70   # Icon size for towers and upgrades
+ICON_PADDING   = 10   # Padding around icons
+HUD_FONT_SIZE  = 40   # Font size for HUD text
+SHOP_WIDTH     = ICON_SIZE + ICON_PADDING * 2  # Width of the sidebar
 
-# Colors (RGB tuples)
+# Colors (RGB)
 WHITE = (255, 255, 255)
-BLACK = (0, 0, 0)
-RED = (255, 0, 0)
-GREEN = (0, 255, 0)
-GRAY = (169, 169, 169)
+BLACK = (0,   0,   0)
+RED   = (255, 0,   0)
+GREEN = (0,   255, 0)
+BLUE  = (0,   0, 255)
+GRAY  = (169, 169, 169)
 
-# Enemy path percentages (x, y) relative positions on screen
+# Enemy path defined as relative percentages of screen size
 PATH_PERCENTAGES = [
-    (0.51, 1.0),
+    (0.51, 1.00),
     (0.51, 0.78),
     (0.62, 0.78),
     (0.62, 0.53),
     (0.405, 0.53),
-    (0.405, 0.0),
+    (0.405, 0.00),
 ]
-
-# Upgrade-Definitionen: Kosten und Effekt-Increment
-TOWER_UPGRADES = {
-    'Damage': {'cost': 20, 'increment': 5},
-    'Range':  {'cost': 20, 'increment': 20},
-    'Reload': {'cost': 20, 'decrement': 200},
-}
