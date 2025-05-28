@@ -1,0 +1,40 @@
+{
+    "Deutsch": {
+        "play": "Spielen",
+        "options": "Optionen",
+        "quit": "Beenden",
+        "save": "Speichern",
+        "back": "Zurück",
+        "sound": "Ton",
+        "on": "Ein",
+        "off": "Aus",
+        "volume": "Lautstärke",
+        "login": "Anmelden",
+        "logout": "Abmelden",
+        "settings_saved": "Einstellungen gespeichert",
+        "language_changed": "Sprache geändert",
+        "paused": "Pause",
+        "resume": "Fortsetzen",
+         "exit": "Beenden"
+    },
+    "English": {
+        "play": "Play",
+        "options": "Options",
+        "quit": "Quit",
+        "save": "Save",
+        "back": "Back",
+        "sound": "Sound",
+        "on": "On",
+        "off": "Off",
+        "volume": "Volume",
+        "login": "Login",
+        "logout": "Logout",
+        "settings_saved": "Settings saved",
+        "language_changed": "Language changed",
+        "paused": "Paused",
+        "resume": "Resume",
+        "exit": "Exit"
+
+
+    }
+}

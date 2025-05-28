@@ -10,11 +10,20 @@ pygame.init()
 # Load background image
 BG = pygame.image.load("assets/images/start_screen/Background1.png")
 
+
+
 # Define screen dimensions and center points
-screen_width = 1280
-screen_height = 720
-center_x = screen_width // 2
-center_y = screen_height // 2
+SCREEN_WIDTH = pygame.display.Info().current_w
+SCREEN_HEIGHT = pygame.display.Info().current_h
+SCREEN = pygame.display.set_mode(
+    (SCREEN_WIDTH, SCREEN_HEIGHT),
+    pygame.FULLSCREEN | pygame.DOUBLEBUF | pygame.HWSURFACE
+)
+
+BG = pygame.transform.scale(BG, (SCREEN_WIDTH, SCREEN_HEIGHT))
+
+center_x = SCREEN_WIDTH // 2
+center_y = SCREEN_HEIGHT // 2
 
 # User-related variables
 user_progress = {}
@@ -47,7 +56,7 @@ def open_login_window():
     global is_logged_in, logged_in_user
 
     # Set up the login window
-    login_screen = pygame.display.set_mode((screen_width, screen_height))
+    login_screen = SCREEN
     pygame.display.set_caption("Login")
 
     # Font settings
@@ -154,7 +163,7 @@ def open_login_window():
         # Buttons for login, registration, and back
         LOGIN_BUTTON = Button(image=None, pos=(center_x - 100, 450), text_input="LOGIN", font=small_font, base_color="White", hovering_color="Green")
         REGISTER_BUTTON = Button(image=None, pos=(center_x + 100, 450), text_input="REGISTER", font=small_font, base_color="White", hovering_color="Green")
-        BACK_BUTTON = Button(image=None, pos=(screen_width - 100, screen_height - 50), text_input="BACK", font=small_font, base_color="White", hovering_color="Green")
+        BACK_BUTTON = Button(image=None, pos=(SCREEN_WIDTH - 100, SCREEN_HEIGHT - 50), text_input="BACK", font=small_font, base_color="White", hovering_color="Green")
 
         # Update button states
         for button in [LOGIN_BUTTON, REGISTER_BUTTON, BACK_BUTTON]:
