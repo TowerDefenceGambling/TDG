@@ -168,6 +168,12 @@ class TowerDefenseGame:
         self.enemies = []
         self.towers = []
         self.occupied = set()
+        # Dev Mode: placement area editor
+        self.dev_mode = False
+        self.drawing = False
+        self.start_pos = None
+        # Initialize placement cells from config
+        self.placement_cells = set(config.PLACEMENT_CELLS)
         self.spawn_timer = 0
         self.spawn_interval = 2000
         self.lives = config.INITIAL_LIVES
@@ -240,10 +246,32 @@ class TowerDefenseGame:
                 self.running = False
             elif ev.type == pygame.KEYDOWN and ev.key == pygame.K_ESCAPE:
                 self.pause_menu()
+            elif ev.type == pygame.KEYDOWN and ev.key == pygame.K_d:
+                # Toggle Dev Mode (d)
+                self.dev_mode = not self.dev_mode
+                self.message = f"Dev Mode {'ein' if self.dev_mode else 'aus'}"
+                self.msg_time = pygame.time.get_ticks()
+            elif self.dev_mode and ev.type == pygame.MOUSEBUTTONDOWN and ev.button == 1:
+                # Start drawing area
+                self.drawing = True
+                self.start_pos = pygame.mouse.get_pos()
+            elif self.dev_mode and ev.type == pygame.MOUSEBUTTONUP and ev.button == 1:
+                # Finish drawing; add cells
+                self.drawing = False
+                x0, y0 = self.start_pos
+                x1, y1 = pygame.mouse.get_pos()
+                gx0, gy0 = x0//config.GRID_SIZE, y0//config.GRID_SIZE
+                gx1, gy1 = x1//config.GRID_SIZE, y1//config.GRID_SIZE
+                for gx in range(min(gx0, gx1), max(gx0, gx1)+1):
+                    for gy in range(min(gy0, gy1), max(gy0, gy1)+1):
+                        self.placement_cells.add((gx, gy))
+                # Persist new placement cells to config
+                config.PLACEMENT_CELLS = list(self.placement_cells)
             elif ev.type == pygame.MOUSEBUTTONDOWN:
                 x, y = pygame.mouse.get_pos()
-                # First...
-
+                # Compute grid cell for placement and hover
+                gx, gy = x // config.GRID_SIZE, y // config.GRID_SIZE
+                # Handle upgrade panel clicks
                 if self._handle_upgrade_click(x, y):
                     return
                 for tw in self.towers:
@@ -256,13 +284,27 @@ class TowerDefenseGame:
                 if ch:
                     self.selected = ch
                     return
-                if x > config.SHOP_WIDTH:
-                    if not self.selected:
-                        self.message = "Bitte Turm auswählen"
+                if not self.dev_mode and x > config.SHOP_WIDTH:
+                    if (gx, gy) in self.placement_cells:
+                        # No tower selected?
+                        if not self.selected:
+                            self.message = "Bitte Turm auswählen"
+                            self.msg_time = pygame.time.get_ticks()
+                            return
+                        if (gx, gy) in self.occupied:
+                            self.message = "Hier steht bereits ein Turm"
+                        else:
+                            cost = config.TOWER_CONFIG[self.selected]['cost']
+                            if self.coins >= cost:
+                                self.coins -= cost
+                                wx = gx*config.GRID_SIZE + config.GRID_SIZE//2
+                                wy = gy*config.GRID_SIZE + config.GRID_SIZE//2
+                                self.towers.append(Tower(wx, wy, self.selected))
+                                self.occupied.add((gx, gy))
+                                self.selected = None
+                            else:
+                                self.message = f"Benötigt: {cost} Münzen"
                         self.msg_time = pygame.time.get_ticks()
-                        return
-                    gx, gy = x//config.GRID_SIZE, y//config.GRID_SIZE
-                    if (gx, gy) in config.PLACEMENT_CELLS:
                         if (gx, gy) in self.occupied:
                             self.message = "Hier steht bereits ein Turm"
                         else:
@@ -302,6 +344,8 @@ class TowerDefenseGame:
         # Move enemies
         for e in self.enemies:
             e.move()
+        # Dev overlay removed from update (now in draw)
+        # draw towers            e.move()
         # Towers shooting
         for t in self.towers:
             t.shoot(self.enemies, now)
@@ -321,6 +365,18 @@ class TowerDefenseGame:
     def draw(self):
         self.screen.blit(BACKGROUND, (0,0))
         pygame.draw.rect(self.screen, config.GRAY, (0,0,config.SHOP_WIDTH,SCREEN_HEIGHT))
+        # Dev overlay: show editable placement area
+        if self.dev_mode:
+            overlay = pygame.Surface((config.GRID_SIZE, config.GRID_SIZE), pygame.SRCALPHA)
+            overlay.fill((0,0,255,50))
+            for gx, gy in self.placement_cells:
+                self.screen.blit(overlay, (gx*config.GRID_SIZE, gy*config.GRID_SIZE))
+            if self.drawing and self.start_pos:
+                x0, y0 = self.start_pos
+                x1, y1 = pygame.mouse.get_pos()
+                rx, ry = min(x0, x1), min(y0, y1)
+                rw, rh = abs(x1 - x0), abs(y1 - y0)
+                pygame.draw.rect(self.screen, config.BLUE, (rx, ry, rw, rh), 2)
         font = load_font(config.HUD_FONT_SIZE)   
         # Coins & Lives
         self.screen.blit(COIN_ICON, (config.ICON_PADDING, config.ICON_PADDING))
