@@ -15,7 +15,7 @@ def level_selection():
             pos=(SCREEN_WIDTH//2, 200),
             text_input="Level 1",
             font=get_font(50),
-            base_color="Black",
+            base_color="White",
             hovering_color="Green"
         )
         level2_btn = Button(
@@ -23,7 +23,7 @@ def level_selection():
             pos=(SCREEN_WIDTH//2, 300),
             text_input="Level 2",
             font=get_font(50),
-            base_color="Black",
+            base_color="White",
             hovering_color="Green"
         )
         level3_btn = Button(
@@ -31,7 +31,7 @@ def level_selection():
             pos=(SCREEN_WIDTH//2, 400),
             text_input="Level 3",
             font=get_font(50),
-            base_color="Black",
+            base_color="White",
             hovering_color="Green"
         )
         back_btn = Button(
@@ -39,7 +39,7 @@ def level_selection():
             pos=(SCREEN_WIDTH//2, 500),
             text_input="BACK",
             font=get_font(50),
-            base_color="Black",
+            base_color="White",
             hovering_color="Green"
         )
 
