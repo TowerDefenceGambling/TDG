@@ -36,6 +36,10 @@ RAW_ENEMY_IMG     = pygame.image.load("assets/images/enemy/enemy_1.png")
 # Projectile images
 RAW_BULLET_IMG   = pygame.image.load("assets/images/tower/bullet_cannon.png")
 RAW_LASER_IMG    = pygame.image.load("assets/images/tower/Laser_Bullet.png")
+# Upgrade panel background image
+RAW_UPGRADE_PANEL = pygame.image.load("assets/images/tower/Upgrade_Panel.png")
+# Upgrade button image
+RAW_UPGRADE_BUTTON = pygame.image.load("assets/images/tower/Upgrade Button.png")("assets/images/tower/Upgrade_Panel.png")
 
 # Scale icons and images
 CANNON_DOUBLE = pygame.transform.scale(RAW_CANNON_DOUBLE, (config.ICON_SIZE, config.ICON_SIZE))
@@ -46,8 +50,10 @@ UPGRADE_ICON  = pygame.transform.scale(RAW_UPGRADE_ICON, (config.ICON_SIZE, conf
 ICON_DAMAGE   = pygame.transform.scale(RAW_ICON_DAMAGE,   (config.ICON_SIZE, config.ICON_SIZE))
 ICON_RANGE    = pygame.transform.scale(RAW_ICON_RANGE,    (config.ICON_SIZE, config.ICON_SIZE))
 ICON_RELOAD   = pygame.transform.scale(RAW_ICON_RELOAD,   (config.ICON_SIZE, config.ICON_SIZE))
+# projectile images
 BULLET_IMG    = pygame.transform.scale(RAW_BULLET_IMG,     (20, 20))
 LASER_BULLET  = pygame.transform.scale(RAW_LASER_IMG,      (20, 20))
+RAW_UPGRADE_BUTTON = pygame.transform.scale(RAW_UPGRADE_BUTTON, (pw if 'pw' in globals() else 200, config.ICON_SIZE+20))  # placeholder size, will scale in draw
 ENEMY_IMG     = pygame.transform.scale(RAW_ENEMY_IMG,      (config.GRID_SIZE, config.GRID_SIZE))
 
 # Path
@@ -90,8 +96,6 @@ class Bullet:
 
     def hit(self):
         return (self.x - self.target.x)**2 + (self.y - self.target.y)**2 <= self.radius**2
-
-        
 
 class Enemy:
     def __init__(self, path):
@@ -281,9 +285,44 @@ class TowerDefenseGame:
         return None
 
     def _handle_upgrade_click(self, x, y):
-        # Combined upgrade: increase damage, range, and reload by level-defined values (max 3 levels)
+        # Combined upgrade click detection aligned with drawn panel
         if not self.selected_tower:
             return False
+        # Panel drawing parameters
+        panel_width = 800
+        visible_width = 600
+        panel_x = SCREEN_WIDTH - visible_width
+        panel_y = -200
+        # Button parameters same as draw()
+        btn_w = panel_width - 40
+        btn_h = config.ICON_SIZE + 20
+        btn_x = panel_x + 20
+        btn_y = panel_y + 300
+        btn_rect = pygame.Rect(btn_x, btn_y, btn_w, btn_h)
+        if btn_rect.collidepoint(x, y):
+            lvl = self.selected_tower.level
+            if lvl >= 3:
+                self.message = "Turm bereits maximal aufgewertet"
+            else:
+                next_lvl = lvl + 1
+                defs = self.upgrade_defs.get(next_lvl)
+                if not defs:
+                    self.message = "Kein Upgrade definiert"
+                else:
+                    cost = defs['cost']
+                    if self.coins < cost:
+                        self.message = f"Upgrade benötigt: {cost} Münzen"
+                    else:
+                        self.coins -= cost
+                        self.selected_tower.damage += defs['Damage']
+                        self.selected_tower.range += defs['Range']
+                        self.selected_tower.cooldown = max(100, self.selected_tower.cooldown - defs['Reload'])
+                        self.selected_tower.level = next_lvl
+                        self.selected_tower._update_texture()
+                        self.message = "Upgrade erfolgreich"
+            self.msg_time = pygame.time.get_ticks()
+            return True
+        return False
         pw = 200
         px = SCREEN_WIDTH - pw
         if x < px:
@@ -514,42 +553,53 @@ class TowerDefenseGame:
         for t in self.towers: t.draw(self.screen)
         # Upgrade panel (combined)
         if self.selected_tower:
-            pw = 200
-            px = SCREEN_WIDTH - pw
-            pygame.draw.rect(self.screen, config.WHITE, (px, 0, pw, SCREEN_HEIGHT))
-            font_small = load_font(24)
-            # show current level
+            # Upgrade panel dimensions (extended, wider, off-screen)
+            pw = 800           # panel width (extends off-screen)
+            ph = SCREEN_HEIGHT + 400  # extend vertically beyond top/bottom
+            visible_w = 600    # visible part width
+            px = SCREEN_WIDTH - visible_w  # start so panel extends beyond right edge
+            py = -200          # extend above top
+            # Blit upgrade panel background image
+            panel = pygame.transform.scale(RAW_UPGRADE_PANEL, (pw, ph))
+            self.screen.blit(panel, (px, py))
+            panel = pygame.transform.scale(RAW_UPGRADE_PANEL, (pw, ph))
+            self.screen.blit(panel, (px, py))
+            # Draw upgrade button inside panel
+            font_small = load_font(28)
+            # Determine next level and cost
             lvl = self.selected_tower.level
-            roman = ['', 'I', 'II', 'III'][lvl]
-            lvl_surf = font_small.render(f"Stufe: {roman}", True, config.BLACK)
-            self.screen.blit(lvl_surf, (px + 10, 10))
-            # upgrade button
-            rect = pygame.Rect(px + 10, 50, pw - 20, config.ICON_SIZE)
-            # determine cost for next level
+            next_lvl = lvl + 1 if lvl < 3 else lvl
+            cost = 0
             if lvl < 3:
-                next_lvl = lvl + 1
-                cost = config.TOWER_UPGRADES[next_lvl]['cost']
-            else:
-                cost = 0
+                cost = self.upgrade_defs[next_lvl]['cost']
+            # Button rectangle relative to panel
+            btn_w = pw - 40
+            btn_h = config.ICON_SIZE + 20
+            btn_x = px + 20
+            btn_y = py + 300
+            btn_rect = pygame.Rect(btn_x, btn_y, btn_w, btn_h)
+            # Draw button background border
             border_color = config.GREEN if lvl < 3 and self.coins >= cost else config.RED
-            pygame.draw.rect(self.screen, border_color, rect, 2)
-            # draw upgrade icon
-            self.screen.blit(UPGRADE_ICON, (rect.x + 5, rect.y))
-            # draw cost next to icon
-            cost_x = rect.x + 5 + UPGRADE_ICON.get_width() + 5
-            self.screen.blit(COIN_ICON, (cost_x, rect.y + (config.ICON_SIZE - COIN_ICON.get_height()) // 2))
-            cost_surf = font_small.render(str(cost), True, config.BLACK)
-            self.screen.blit(cost_surf, (
-                cost_x + COIN_ICON.get_width() + 5,
-                rect.y + (config.ICON_SIZE - cost_surf.get_height()) // 2
-            ))
-            # draw button label
-            btn_label = "Upgrade" if lvl < 3 else "Maxed"
-            label_surf = font_small.render(btn_label, True, config.BLACK)
-            # position label centered in rect
-            label_x = rect.x + (rect.width - label_surf.get_width()) // 2
-            label_y = rect.y + rect.height + 5
-            self.screen.blit(label_surf, (label_x, label_y))
+            # Blit upgrade button image
+            button_img = pygame.transform.scale(RAW_UPGRADE_BUTTON, (btn_w, btn_h))
+            self.screen.blit(button_img, (btn_x, btn_y))
+
+            # Draw upgrade panel icon
+            icon_y = btn_y + (btn_h - config.ICON_SIZE) // 2
+            self.screen.blit(UPGRADE_ICON, (btn_x + 10, icon_y))
+            # Draw cost with coin icon if upgradable
+            if lvl < 3:
+                coin_x = btn_x + 20 + config.ICON_SIZE
+                self.screen.blit(COIN_ICON, (coin_x, icon_y + (config.ICON_SIZE - COIN_ICON.get_height())//2))
+                cost_surf = font_small.render(str(cost), True, config.BLACK)
+                self.screen.blit(cost_surf, (coin_x + COIN_ICON.get_width() + 10,
+                                             icon_y + (config.ICON_SIZE - cost_surf.get_height())//2))
+            # Draw button label
+            label = "Upgrade" if lvl < 3 else "Maxed"
+            label_surf = font_small.render(label, True, config.BLACK)
+            lbl_x = btn_x + btn_w - label_surf.get_width() - 20
+            lbl_y = btn_y + (btn_h - label_surf.get_height())//2
+            self.screen.blit(label_surf, (lbl_x, lbl_y))
         # Message
         if self.message and pygame.time.get_ticks()-self.msg_time<2000:
             mtxt=font.render(self.message,True,config.RED); self.screen.blit(mtxt,(SCREEN_WIDTH//2-mtxt.get_width()//2,config.ICON_PADDING))
