@@ -2,7 +2,7 @@
 
 # Game settings
 INITIAL_LIVES = 15  # Number of lives at game start
-START_COINS   = 25  # Starting coins
+START_COINS   = 2500  # Starting coins
 COIN_REWARD   = 7   # Coins earned per enemy kill
 
 # Enemy settings
@@ -14,7 +14,7 @@ TOWER_CONFIG = {
     "double": {
         "cost":     12,
         "range":    180,
-        "cooldown":  900,
+        "cooldown":  1300,
         "damage":   15,
     },
     "small": {

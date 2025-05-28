@@ -33,6 +33,9 @@ RAW_ICON_RELOAD   = pygame.image.load("assets/images/level1/magazine_icon.png")
 BULLET_IMG        = pygame.image.load("assets/images/tower/bullet_cannon.png")
 # Enemy image
 RAW_ENEMY_IMG     = pygame.image.load("assets/images/enemy/enemy_1.png")
+# Projectile images
+RAW_BULLET_IMG   = pygame.image.load("assets/images/tower/bullet_cannon.png")
+RAW_LASER_IMG    = pygame.image.load("assets/images/tower/Laser_Bullet.png")
 
 # Scale icons and images
 CANNON_DOUBLE = pygame.transform.scale(RAW_CANNON_DOUBLE, (config.ICON_SIZE, config.ICON_SIZE))
@@ -43,7 +46,9 @@ UPGRADE_ICON  = pygame.transform.scale(RAW_UPGRADE_ICON, (config.ICON_SIZE, conf
 ICON_DAMAGE   = pygame.transform.scale(RAW_ICON_DAMAGE,   (config.ICON_SIZE, config.ICON_SIZE))
 ICON_RANGE    = pygame.transform.scale(RAW_ICON_RANGE,    (config.ICON_SIZE, config.ICON_SIZE))
 ICON_RELOAD   = pygame.transform.scale(RAW_ICON_RELOAD,   (config.ICON_SIZE, config.ICON_SIZE))
-ENEMY_IMG     = pygame.transform.scale(RAW_ENEMY_IMG,    (config.GRID_SIZE, config.GRID_SIZE))
+BULLET_IMG    = pygame.transform.scale(RAW_BULLET_IMG,     (20, 20))
+LASER_BULLET  = pygame.transform.scale(RAW_LASER_IMG,      (20, 20))
+ENEMY_IMG     = pygame.transform.scale(RAW_ENEMY_IMG,      (config.GRID_SIZE, config.GRID_SIZE))
 
 # Path
 PATH = [(int(x * SCREEN_WIDTH), int(y * SCREEN_HEIGHT)) for x, y in config.PATH_PERCENTAGES]
@@ -55,6 +60,39 @@ def draw_circle(screen, pos, color, radius):
 def load_font(size):
     return pygame.font.SysFont(None, size)
 
+class Bullet:
+    def __init__(self, x, y, target, is_laser=False):
+        self.x = x
+        self.y = y
+        self.target = target
+        self.speed = getattr(target, 'bullet_speed', 10)
+        self.is_laser = is_laser
+        self.image = LASER_BULLET if is_laser else BULLET_IMG
+        self.radius = 10
+        self.angle = 0
+
+    def move(self):
+        dx = self.target.x - self.x
+        dy = self.target.y - self.y
+        dist = math.hypot(dx, dy)
+        if dist:
+            ux, uy = dx/dist, dy/dist
+            self.x += ux * self.speed
+            self.y += uy * self.speed
+            # compute angle
+            self.angle = math.degrees(math.atan2(-uy, ux))
+
+    def draw(self, screen):
+        draw_angle = self.angle if self.is_laser else self.angle + 90
+        rotated = pygame.transform.rotate(self.image, draw_angle)
+        rect = rotated.get_rect(center=(int(self.x), int(self.y)))
+        screen.blit(rotated, rect.topleft)
+
+    def hit(self):
+        return (self.x - self.target.x)**2 + (self.y - self.target.y)**2 <= self.radius**2
+
+        
+
 class Enemy:
     def __init__(self, path):
         self.path = path
@@ -62,6 +100,7 @@ class Enemy:
         self.x, self.y = path[0]
         self.speed = config.ENEMY_SPEED
         self.health = config.ENEMY_HEALTH
+        # For drawing
         self.rotated_image = ENEMY_IMG
         self.rect = self.rotated_image.get_rect(center=(self.x, self.y))
 
@@ -71,55 +110,39 @@ class Enemy:
             dx, dy = tx - self.x, ty - self.y
             dist = math.hypot(dx, dy)
             if dist:
-                dx, dy = dx/dist, dy/dist
+                dx, dy = dx / dist, dy / dist
             self.x += dx * self.speed
             self.y += dy * self.speed
             if abs(self.x - tx) < self.speed and abs(self.y - ty) < self.speed:
                 self.index += 1
-            self.rect.center = (self.x, self.y)
+            # Update rotation
             angle = math.degrees(math.atan2(-dy, dx)) - 90
             self.rotated_image = pygame.transform.rotate(ENEMY_IMG, angle)
             self.rect = self.rotated_image.get_rect(center=(self.x, self.y))
 
     def draw(self, screen):
-        bw = config.GRID_SIZE // 2
-        bh = 5
-        ratio = max(self.health, 0) / config.ENEMY_HEALTH
-        bx = self.x - bw // 2
-        by = self.y - 20
-        pygame.draw.rect(screen, config.RED, (bx, by, bw, bh))
-        pygame.draw.rect(screen, config.GREEN, (bx, by, int(bw * ratio), bh))
+        # Draw the enemy
         screen.blit(self.rotated_image, self.rect.topleft)
+        # Draw health bar above enemy
+        bar_w = config.GRID_SIZE // 2
+        bar_h = 5
+        ratio = max(self.health, 0) / config.ENEMY_HEALTH
+        bx = self.x - bar_w // 2
+        by = self.y - 20
+        pygame.draw.rect(screen, config.RED, (bx, by, bar_w, bar_h))
+        pygame.draw.rect(screen, config.GREEN, (bx, by, int(bar_w * ratio), bar_h))
 
-    def reached_end(self):
+    def has_reached_end(self):
         return self.index >= len(self.path) - 1
 
-class Bullet:
-    def __init__(self, x, y, target):
-        self.x, self.y = x, y
-        self.target = target
-        self.speed = getattr(target, 'bullet_speed', 10)
-        self.image = pygame.transform.scale(BULLET_IMG, (20, 20))
-        self.radius = 10
-
-    def move(self):
-        dx = self.target.x - self.x
-        dy = self.target.y - self.y
-        dist = math.hypot(dx, dy)
-        if dist:
-            dx, dy = dx/dist, dy/dist
-        self.x += dx * self.speed
-        self.y += dy * self.speed
-
-    def draw(self, screen):
-        screen.blit(self.image, (int(self.x - 10), int(self.y - 10)))
-
-    def hit(self):
-        return (self.x - self.target.x)**2 + (self.y - self.target.y)**2 <= self.radius**2
+    # alias for reached_end
+    def reached_end(self):
+        return self.has_reached_end()
 
 class Tower:
     def __init__(self, x, y, ttype):
         self.x, self.y = x, y
+        self.type = ttype  # 'small' or 'double'
         cfg = config.TOWER_CONFIG[ttype]
         self.cost = cfg['cost']
         self.range = cfg['range']
@@ -128,18 +151,71 @@ class Tower:
         self.last_shot = 0
         self.bullets = []
         self.target = None
-        self.image = CANNON_DOUBLE if ttype == 'double' else CANNON_SMALL
-        # Combined upgrade level (0–3)
-        self.level = 0
+        self.level = 0  # Combined upgrade level
+        # For double tower delayed second shot
+        self.next_shot_time = None
+        self._shot_perp = (0,0)
+        # Load initial texture
+        self._update_texture()
+
+    def _update_texture(self):
+        # Dynamically load tower image based on type and level
+        base_name = "Cannon2" if self.type == 'double' else "Cannon3"
+        suffix = f"_{self.level}" if self.level > 0 else ""
+        path = f"assets/images/tower/{base_name}{suffix}.png"
+        try:
+            img = pygame.image.load(path)
+        except Exception:
+            img = pygame.image.load(f"assets/images/tower/{base_name}.png")
+        size = config.ICON_SIZE
+        self.image = pygame.transform.scale(img, (size, size))
 
     def shoot(self, enemies, now):
-        if now - self.last_shot >= self.cooldown:
-            for e in enemies:
-                if (e.x - self.x)**2 + (e.y - self.y)**2 <= self.range**2:
-                    self.bullets.append(Bullet(self.x, self.y, e))
-                    self.target = e
-                    self.last_shot = now
-                    break
+        if self.type == 'double':
+            # Double tower: fire two shots with 0.5s delay using perpendicular offsets
+            # First shot: when ready and not already scheduled
+            if self.next_shot_time is None and now - self.last_shot >= self.cooldown:
+                for e in enemies:
+                    dx = e.x - self.x
+                    dy = e.y - self.y
+                    if dx*dx + dy*dy <= self.range**2:
+                        dist = math.hypot(dx, dy)
+                        ux, uy = dx/dist, dy/dist
+                        # perpendicular vector
+                        px, py = -uy, ux
+                        offset = config.ICON_SIZE // 4
+                        # left shot
+                        sx = self.x + px*offset
+                        sy = self.y + py*offset
+                        is_laser = (self.level == 3)
+                        self.bullets.append(Bullet(sx, sy, e, is_laser))
+                        # schedule second shot
+                        self.next_shot_time = now + 500
+                        self.target = e
+                        self._shot_perp = (px*offset, py*offset)
+                        break
+            # Second shot: when scheduled time reached
+            elif self.next_shot_time is not None and now >= self.next_shot_time:
+                e = self.target
+                if e and (e.x - self.x)**2 + (e.y - self.y)**2 <= self.range**2:
+                    px_off, py_off = self._shot_perp
+                    sx = self.x - px_off
+                    sy = self.y - py_off
+                    is_laser = (self.level == 3)
+                    self.bullets.append(Bullet(sx, sy, e, is_laser))
+                # after second shot reset and start cooldown
+                self.next_shot_time = None
+                self.last_shot = now
+        else:
+            # Small tower default behavior
+            if now - self.last_shot >= self.cooldown:
+                for e in enemies:
+                    if (e.x - self.x)**2 + (e.y - self.y)**2 <= self.range**2:
+                        is_laser = (self.level == 3)
+                        self.bullets.append(Bullet(self.x, self.y, e, is_laser))
+                        self.target = e
+                        self.last_shot = now
+                        break
 
     def update(self):
         for b in self.bullets[:]:
@@ -236,6 +312,8 @@ class TowerDefenseGame:
                             self.selected_tower.cooldown - defs['Reload']
                         )
                         self.selected_tower.level = next_lvl
+                        # Update tower texture for new level
+                        self.selected_tower._update_texture()
             self.msg_time = pygame.time.get_ticks()
             return True
         return False
