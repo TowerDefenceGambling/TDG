@@ -1,7 +1,7 @@
 # Configuration file for Tower Defense Game
 
 # Game settings
-INITIAL_LIVES = 1  # Number of lives at game start
+INITIAL_LIVES = 10  # Number of lives at game start
 START_COINS   = 2500  # Starting coins
 COIN_REWARD   = 7   # Coins earned per enemy kill
 
