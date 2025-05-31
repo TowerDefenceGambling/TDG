@@ -1,13 +1,13 @@
 # Configuration file for Tower Defense Game
 
 # Game settings
-INITIAL_LIVES = 15  # Number of lives at game start
+INITIAL_LIVES = 1  # Number of lives at game start
 START_COINS   = 2500  # Starting coins
 COIN_REWARD   = 7   # Coins earned per enemy kill
 
 # Enemy settings
 ENEMY_HEALTH = 120   # Initial health of each enemy
-ENEMY_SPEED  = 1.2   # Movement speed of enemies
+ENEMY_SPEED  = 2   # Movement speed of enemies
 
 # Tower settings (cost in coins, range in pixels, cooldown in ms, damage per shot)
 TOWER_CONFIG = {
@@ -147,4 +147,3 @@ PATH_PERCENTAGES = [
     (0.405, 0.53),
     (0.405, 0.00),
 ]
-

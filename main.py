@@ -26,7 +26,6 @@ SCREEN = pygame.display.set_mode(
 pygame.display.set_caption("Menu")
 
 # Load background image
-# Load background image
 BG = pygame.image.load("assets/images/start_screen/Background1.png")
 BG = pygame.transform.scale(BG, (SCREEN_WIDTH, SCREEN_HEIGHT))
 

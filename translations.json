@@ -15,7 +15,8 @@
         "language_changed": "Sprache geändert",
         "paused": "Pause",
         "resume": "Fortsetzen",
-         "exit": "Beenden"
+        "exit": "Beenden"
+
     },
     "English": {
         "play": "Play",

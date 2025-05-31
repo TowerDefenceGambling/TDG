@@ -9,6 +9,7 @@ from button import Button
 # Initialize Pygame
 pygame.init()
 
+
 # Screen setup
 SCREEN_WIDTH = pygame.display.Info().current_w
 SCREEN_HEIGHT = pygame.display.Info().current_h
@@ -40,7 +41,11 @@ RAW_LASER_IMG    = pygame.image.load("assets/images/tower/Laser_Bullet.png")
 # Upgrade panel background image
 RAW_UPGRADE_PANEL = pygame.image.load("assets/images/tower/Upgrade_Panel.png")
 # Upgrade button image
-RAW_UPGRADE_BUTTON = pygame.image.load("assets/images/tower/Upgrade Button.png")("assets/images/tower/Upgrade_Panel.png")
+RAW_UPGRADE_BUTTON = pygame.image.load("assets/images/tower/Upgrade Button.png")
+RAW_UPGRADE_PANEL = pygame.image.load("assets/images/tower/Upgrade_Panel.png")
+#Sound
+SOUND_ENEMY_DEATH = pygame.mixer.Sound("assets/sounds/Uff.mp3")
+
 
 # Scale icons and images
 CANNON_DOUBLE = pygame.transform.scale(RAW_CANNON_DOUBLE, (config.ICON_SIZE, config.ICON_SIZE))
@@ -56,6 +61,17 @@ BULLET_IMG    = pygame.transform.scale(RAW_BULLET_IMG,     (20, 20))
 LASER_BULLET  = pygame.transform.scale(RAW_LASER_IMG,      (20, 20))
 RAW_UPGRADE_BUTTON = pygame.transform.scale(RAW_UPGRADE_BUTTON, (pw if 'pw' in globals() else 200, config.ICON_SIZE+20))  # placeholder size, will scale in draw
 ENEMY_IMG     = pygame.transform.scale(RAW_ENEMY_IMG,      (config.GRID_SIZE, config.GRID_SIZE))
+
+#Sounds
+LASER_SOUNDS_SMALL = [
+    pygame.mixer.Sound("assets/sounds/Laser1.mp3"),
+    pygame.mixer.Sound("assets/sounds/Laser2.mp3")
+]
+
+LASER_SOUNDS_DOUBLE = [
+    pygame.mixer.Sound("assets/sounds/Laser3.mp3"),
+    pygame.mixer.Sound("assets/sounds/Laser4.mp3")
+]
 
 # Path
 PATH = [(int(x * SCREEN_WIDTH), int(y * SCREEN_HEIGHT)) for x, y in config.PATH_PERCENTAGES]
@@ -100,6 +116,7 @@ class Bullet:
 
 class Enemy:
     def __init__(self, path):
+        self.alive = True
         self.path = path
         self.index = 0
         self.x, self.y = path[0]
@@ -143,6 +160,7 @@ class Enemy:
     # alias for reached_end
     def reached_end(self):
         return self.has_reached_end()
+        
 
 class Tower:
     def __init__(self, x, y, ttype):
@@ -156,6 +174,7 @@ class Tower:
         self.last_shot = 0
         self.bullets = []
         self.target = None
+        self.sound_index = 0
         self.level = 0  # Combined upgrade level
         # For double tower delayed second shot
         self.next_shot_time = None
@@ -177,8 +196,6 @@ class Tower:
 
     def shoot(self, enemies, now):
         if self.type == 'double':
-            # Double tower: fire two shots with 0.5s delay using perpendicular offsets
-            # First shot: when ready and not already scheduled
             if self.next_shot_time is None and now - self.last_shot >= self.cooldown:
                 for e in enemies:
                     dx = e.x - self.x
@@ -186,20 +203,18 @@ class Tower:
                     if dx*dx + dy*dy <= self.range**2:
                         dist = math.hypot(dx, dy)
                         ux, uy = dx/dist, dy/dist
-                        # perpendicular vector
                         px, py = -uy, ux
                         offset = config.ICON_SIZE // 4
-                        # left shot
                         sx = self.x + px*offset
                         sy = self.y + py*offset
                         is_laser = (self.level == 3)
                         self.bullets.append(Bullet(sx, sy, e, is_laser))
-                        # schedule second shot
+                        LASER_SOUNDS_DOUBLE[self.sound_index % 2].play()
+                        self.sound_index += 1
                         self.next_shot_time = now + 500
                         self.target = e
                         self._shot_perp = (px*offset, py*offset)
                         break
-            # Second shot: when scheduled time reached
             elif self.next_shot_time is not None and now >= self.next_shot_time:
                 e = self.target
                 if e and (e.x - self.x)**2 + (e.y - self.y)**2 <= self.range**2:
@@ -208,26 +223,42 @@ class Tower:
                     sy = self.y - py_off
                     is_laser = (self.level == 3)
                     self.bullets.append(Bullet(sx, sy, e, is_laser))
-                # after second shot reset and start cooldown
+                    LASER_SOUNDS_DOUBLE[self.sound_index % 2].play()
+                    self.sound_index += 1
                 self.next_shot_time = None
                 self.last_shot = now
         else:
-            # Small tower default behavior
             if now - self.last_shot >= self.cooldown:
                 for e in enemies:
                     if (e.x - self.x)**2 + (e.y - self.y)**2 <= self.range**2:
                         is_laser = (self.level == 3)
                         self.bullets.append(Bullet(self.x, self.y, e, is_laser))
+                        LASER_SOUNDS_SMALL[self.sound_index % 2].play()
+                        self.sound_index += 1
                         self.target = e
                         self.last_shot = now
                         break
+
+        for e in enemies:
+            if not e.alive:
+                continue
+            dx = e.x - self.x
+            dy = e.y - self.y
+
+
 
     def update(self):
         for b in self.bullets[:]:
             b.move()
             if b.hit():
-                b.target.health -= self.damage
+                if b.target.alive:
+                    b.target.health -= self.damage
+                    if b.target.health <= 0:
+                        b.target.alive = False
+                        SOUND_ENEMY_DEATH.play()
                 self.bullets.remove(b)
+
+
 
     def draw(self, screen):
         ang = 0
@@ -458,43 +489,45 @@ class TowerDefenseGame:
     def update(self):
         now = pygame.time.get_ticks()
 
+        # Neue Welle starten
         if not self.wave_active:
-            # Start new wave after cooldown
             if now - self.last_spawn_time > self.wave_cooldown:
                 self.wave_active = True
                 self.enemies_spawned = 0
 
+        # Gegner spawnen
         if self.wave_active:
-             # Spawn enemies one by one with interval
             if self.enemies_spawned < 3:
                 if now - self.last_spawn_time > self.enemy_spawn_interval:
                     self.spawn_enemy()
                     self.enemies_spawned += 1
                     self.last_spawn_time = now
             else:
-            # All enemies spawned, end the wave
                 self.wave_active = False
-                self.last_spawn_time = now  # Reset cooldown timer for next wave
+                self.last_spawn_time = now
 
-        # Move enemies
+        # Gegner bewegen
         for e in self.enemies:
             e.move()
-        # Dev overlay removed from update (now in draw)
-        # draw towers            e.move()
-        # Towers shooting
+
+        # Türme feuern
         for t in self.towers:
             t.shoot(self.enemies, now)
             t.update()
-        # Check enemies status
+
+        # Gegner entfernen (tot oder Ziel erreicht)
         for e in self.enemies[:]:
             if e.reached_end():
                 self.lives -= 1
                 self.enemies.remove(e)
-            elif e.health <= 0:
+            elif not e.alive:
                 self.coins += self.coin_reward
                 self.enemies.remove(e)
+
+        # Spielende prüfen
         if self.lives <= 0:
             self.running = False
+
 
 
     def draw(self):
@@ -631,6 +664,13 @@ class TowerDefenseGame:
         # Hintergrundbild laden und skalieren
         bg_image = pygame.image.load("assets/images/start_screen/Background1.png").convert()
         bg_image = pygame.transform.scale(bg_image, (SCREEN_WIDTH, SCREEN_HEIGHT))
+
+        #Sounds 
+        gameover_sounds = [
+            pygame.mixer.Sound("assets/sounds/Fortnite.mp3"),
+            pygame.mixer.Sound("assets/sounds/death-bong.mp3")
+        ]
+        random.choice(gameover_sounds).play()
 
         restart_btn = Button(None, (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 30), "Restart", font_btn, config.WHITE, config.RED)
         exit_btn = Button(None, (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 30), "Exit", font_btn, config.WHITE, config.RED)
