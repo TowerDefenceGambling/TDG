@@ -125,6 +125,7 @@ class Enemy:
         # For drawing
         self.rotated_image = ENEMY_IMG
         self.rect = self.rotated_image.get_rect(center=(self.x, self.y))
+       
 
     def move(self):
         if self.index < len(self.path) - 1:
@@ -319,6 +320,11 @@ class TowerDefenseGame:
         self.wave_cooldown = 5000
         self.last_spawn_time = 0
         self.volume = 5
+        #Enemy waves
+        self.win = False
+        self.current_wave = 0
+        self.max_waves = 10
+        self.running = True
 
     def spawn_enemy(self):
         self.enemies.append(Enemy(PATH))
@@ -493,10 +499,13 @@ class TowerDefenseGame:
         now = pygame.time.get_ticks()
 
         # Neue Welle starten
-        if not self.wave_active:
+        if not self.wave_active and self.current_wave < self.max_waves:
             if now - self.last_spawn_time > self.wave_cooldown:
+                self.current_wave += 1
+                print(f"Wave {self.current_wave} gestartet")
                 self.wave_active = True
                 self.enemies_spawned = 0
+                self.last_spawn_time = now
 
         # Gegner spawnen
         if self.wave_active:
@@ -506,6 +515,7 @@ class TowerDefenseGame:
                     self.enemies_spawned += 1
                     self.last_spawn_time = now
             else:
+                # Alle Gegner dieser Wave wurden gespawnt
                 self.wave_active = False
                 self.last_spawn_time = now
 
@@ -529,8 +539,10 @@ class TowerDefenseGame:
 
         # Spielende prüfen
         if self.lives <= 0:
+            self.running = False  # verloren
+        elif self.current_wave >= self.max_waves and not self.enemies and not self.wave_active:
+            self.win = True       # gewonnen
             self.running = False
-
 
 
     def draw(self):
@@ -657,9 +669,26 @@ class TowerDefenseGame:
         # Message
         if self.message and pygame.time.get_ticks()-self.msg_time<2000:
             mtxt=font.render(self.message,True,config.RED); self.screen.blit(mtxt,(SCREEN_WIDTH//2-mtxt.get_width()//2,config.ICON_PADDING))
+
+        wave_text = font.render(f"Wave: {self.current_wave} / {self.max_waves}", True, (255, 255, 255))
+        text_pos = (10, self.screen.get_height() - wave_text.get_height() - 10)
+        self.screen.blit(wave_text, text_pos)
+
         pygame.display.flip()
 
+        
+    def show_win_screen(self): #muss angepasst werden 
+        win_font = pygame.font.SysFont("arial", 50)
+        win_text = win_font.render("Du hast gewonnen!", True, (0, 255, 0))
+    
+        self.screen.fill((0, 0, 0))
+        self.screen.blit(win_text, (self.screen.get_width() // 2 - win_text.get_width() // 2,
+                                self.screen.get_height() // 2 - win_text.get_height() // 2))
+        pygame.display.flip()
+    
+    
 
+    
     def game_over_screen(self):
         font_large = pygame.font.SysFont(None, 72)
         font_btn = pygame.font.SysFont(None, 48)
@@ -716,6 +745,10 @@ class TowerDefenseGame:
         while self.running:
             self.handle_events(); self.update(); self.draw(); self.clock.tick(60)
         self.game_over_screen()
+
+        if self.win:
+            self.show_win_screen()
+
 
 if __name__=="__main__":
     TowerDefenseGame().run()

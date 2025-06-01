@@ -34,7 +34,7 @@ RAW_ICON_RANGE    = pygame.image.load("assets/images/level1/sniper_icon.png")
 RAW_ICON_RELOAD   = pygame.image.load("assets/images/level1/magazine_icon.png")
 BULLET_IMG        = pygame.image.load("assets/images/tower/bullet_cannon.png")
 # Enemy image
-RAW_ENEMY_IMG     = pygame.image.load("assets/images/enemy/enemy_1.png")
+RAW_ENEMY_IMG     = pygame.image.load("assets/images/enemy/enemy_2.png")
 # Projectile images
 RAW_BULLET_IMG   = pygame.image.load("assets/images/tower/bullet_cannon.png")
 RAW_LASER_IMG    = pygame.image.load("assets/images/tower/Laser_Bullet.png")
