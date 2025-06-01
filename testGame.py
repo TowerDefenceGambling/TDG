@@ -73,6 +73,8 @@ LASER_SOUNDS_DOUBLE = [
     pygame.mixer.Sound("assets/sounds/Laser4.mp3")
 ]
 
+
+
 # Path
 PATH = [(int(x * SCREEN_WIDTH), int(y * SCREEN_HEIGHT)) for x, y in config.PATH_PERCENTAGES_LEVEL_1]
 
@@ -325,6 +327,10 @@ class TowerDefenseGame:
         self.current_wave = 0
         self.max_waves = 10
         self.running = True
+        self.damage_sound = pygame.mixer.Sound("assets/sounds/damage.mp3")
+        self.damage_sound.set_volume(0.5)  # 50 % Lautstärke
+
+
 
     def spawn_enemy(self):
         self.enemies.append(Enemy(PATH))
@@ -532,10 +538,12 @@ class TowerDefenseGame:
         for e in self.enemies[:]:
             if e.reached_end():
                 self.lives -= 1
+                self.damage_sound.play()  # Sound bei Schaden
                 self.enemies.remove(e)
             elif not e.alive:
                 self.coins += self.coin_reward
                 self.enemies.remove(e)
+
 
         # Spielende prüfen
         if self.lives <= 0:
@@ -626,8 +634,6 @@ class TowerDefenseGame:
             px = SCREEN_WIDTH - visible_w  # start so panel extends beyond right edge
             py = -200          # extend above top
             # Blit upgrade panel background image
-            panel = pygame.transform.scale(RAW_UPGRADE_PANEL, (pw, ph))
-            self.screen.blit(panel, (px, py))
             panel = pygame.transform.scale(RAW_UPGRADE_PANEL, (pw, ph))
             self.screen.blit(panel, (px, py))
             # Draw upgrade button inside panel
@@ -739,15 +745,71 @@ class TowerDefenseGame:
                     elif event.key == pygame.K_e:
                         self.running = False
                         return
+                    
+    def winner_screen(self):
+        font_large = pygame.font.SysFont(None, 72)
+        font_btn = pygame.font.SysFont(None, 48)
 
+        # Hintergrundbild laden und skalieren
+        bg_image = pygame.image.load("assets/images/start_screen/Background1.png").convert()
+        bg_image = pygame.transform.scale(bg_image, (SCREEN_WIDTH, SCREEN_HEIGHT))
+
+        # Gewinner-Sound (optional)
+        win_sound = pygame.mixer.Sound("assets/sounds/gewonnen.mp3")
+        win_sound.play()
+
+        restart_btn = Button(None, (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 30), "Restart", font_btn, config.WHITE, config.GREEN)
+        exit_btn = Button(None, (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 30), "Exit", font_btn, config.WHITE, config.GREEN)
+
+        while True:
+            self.screen.blit(bg_image, (0, 0))  # Hintergrund zeichnen
+
+            title_surf = font_large.render("YOU WIN!", True, config.GREEN)
+            self.screen.blit(title_surf, title_surf.get_rect(center=(SCREEN_WIDTH // 2, 150)))
+
+            mouse_pos = pygame.mouse.get_pos()
+            for btn in [restart_btn, exit_btn]:
+                btn.changeColor(mouse_pos)
+                btn.update(self.screen)
+
+            pygame.display.flip()
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if restart_btn.checkForInput(mouse_pos):
+                        return  # Spiel neu starten
+                    elif exit_btn.checkForInput(mouse_pos):
+                        self.running = False
+                        return
+
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_r:
+                        return
+                    elif event.key == pygame.K_e:
+                        self.running = False
+                        return
+
+
+
+    def end_game(self):
+        if self.win:
+            self.winner_screen()
+        else:
+            self.game_over_screen()
 
     def run(self):
         while self.running:
-            self.handle_events(); self.update(); self.draw(); self.clock.tick(60)
-        self.game_over_screen()
+            self.handle_events()
+            self.update()
+            self.draw()
+            self.clock.tick(60)
+        self.end_game()
 
-        if self.win:
-            self.show_win_screen()
+
 
 
 if __name__=="__main__":
