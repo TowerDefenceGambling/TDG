@@ -33,19 +33,19 @@ def load_image(filepath, height):
     return scale_image(image, height)
 
 symbols = [
-    load_image('c:/Users/VWPE11T/new Website/modules/static/zitroneSlot.png', 60),  # Smaller Zitrone
-    load_image('c:/Users/VWPE11T/new Website/modules/static/kirscheS.png', 60),  # Smaller Kirsche
-    load_image('c:/Users/VWPE11T/new Website/modules/static/berry.png', 60),  # Smaller Berry
-    load_image('c:/Users/VWPE11T/new Website/modules/static/melone.png', 60),  # Smaller Melone
+    load_image('modules/static/zitroneSlot.png', 60),  # Smaller Zitrone
+    load_image('modules/static/kirscheS.png', 60),  # Smaller Kirsche
+    load_image('modules/static/berry.png', 60),  # Smaller Berry
+    load_image('modules/static/melone.png', 60),  # Smaller Melone
 ]
 
 # Load explosion image
-explosion_image = load_image('c:/Users/VWPE11T/new Website/modules/static/explosion.png', 60)
+explosion_image = load_image('modules/static/explosion.png', 60)
 
 # Sounds
 try:
-    win_sound = pygame.mixer.Sound('c:/Users/VWPE11T/new Website/modules/static/slotWin.wav')
-    spin_sound = pygame.mixer.Sound('c:/Users/VWPE11T/new Website/modules/static/spinn.wav')
+    win_sound = pygame.mixer.Sound('modules/static/slotWin.wav')
+    spin_sound = pygame.mixer.Sound('modules/static/spinn.wav')
     spin_sound.set_volume(0.3)  # Decrease spin sound volume to 50%
 except pygame.error:
     print("Error loading sound files. Ensure the sound files exist in the specified path.")
@@ -54,7 +54,7 @@ except pygame.error:
 
 # Load background music
 try:
-    pygame.mixer.music.load('c:/Users/VWPE11T/new Website/modules/static/background_music.mp3')
+    pygame.mixer.music.load('modules/static/background_music.mp3')
     pygame.mixer.music.set_volume(0.5)  # Set volume to 50%
     pygame.mixer.music.play(-1)  # Loop the background music
 except pygame.error:
@@ -62,7 +62,7 @@ except pygame.error:
 
 # Load background image
 try:
-    background_image = load_image('c:/Users/VWPE11T/new Website/modules/static/Background1.png', HEIGHT)
+    background_image = load_image('modules/static/Background1.png', HEIGHT)
 except FileNotFoundError:
     print("Error: Background image not found. Ensure 'background1.png' exists in the specified path.")
     background_image = None
