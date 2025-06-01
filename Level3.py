@@ -435,9 +435,9 @@ class TowerDefenseGame:
                 config.PLACEMENT_CELLS = list(self.placement_cells)
             elif ev.type == pygame.MOUSEBUTTONDOWN:
                 x, y = pygame.mouse.get_pos()
-                percent_x = round(x / SCREEN_WIDTH, 4)
-                percent_y = round(y / SCREEN_HEIGHT, 4)
-                print(f"({percent_x}, {percent_y})")
+                #percent_x = round(x / SCREEN_WIDTH, 4)
+                #percent_y = round(y / SCREEN_HEIGHT, 4)
+                #print(f"({percent_x}, {percent_y})")
                 # Compute grid cell for placement and hover
                 gx, gy = x // config.GRID_SIZE, y // config.GRID_SIZE
                 # Handle upgrade panel clicks
