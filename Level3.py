@@ -20,7 +20,7 @@ pygame.display.set_caption("Tower Defense")
 
 # Load assets
 BACKGROUND = pygame.transform.scale(
-    pygame.image.load("assets/images/level1/tiles.png"),
+    pygame.image.load("assets/images/level3/Map_Level_3.png"),
     (SCREEN_WIDTH, SCREEN_HEIGHT)
 )
 RAW_CANNON_DOUBLE = pygame.image.load("assets/images/tower/Cannon2.png")
@@ -74,7 +74,7 @@ LASER_SOUNDS_DOUBLE = [
 ]
 
 # Path
-PATH = [(int(x * SCREEN_WIDTH), int(y * SCREEN_HEIGHT)) for x, y in config.PATH_PERCENTAGES_LEVEL_1]
+PATH = [(int(x * SCREEN_WIDTH), int(y * SCREEN_HEIGHT)) for x, y in config.PATH_PERCENTAGES_LEVEL_3]
 
 # Helper functions
 def draw_circle(screen, pos, color, radius):
@@ -437,7 +437,7 @@ class TowerDefenseGame:
                 x, y = pygame.mouse.get_pos()
                 #percent_x = round(x / SCREEN_WIDTH, 4)
                 #percent_y = round(y / SCREEN_HEIGHT, 4)
-                #print(f"PATH Percentages: ({percent_x}, {percent_y})")
+                #print(f"({percent_x}, {percent_y})")
                 # Compute grid cell for placement and hover
                 gx, gy = x // config.GRID_SIZE, y // config.GRID_SIZE
                 # Handle upgrade panel clicks

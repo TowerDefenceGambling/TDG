@@ -4,6 +4,8 @@ from button import Button
 def level_selection():
     from main import SCREEN, SCREEN_WIDTH, SCREEN_HEIGHT, get_font, main_menu, BG
     import testGame as tg  # <--- Import ergänzen
+    import Level2 as lvl2
+    import Level3 as lvl3
     running = True
     while running:
         SCREEN.blit(BG, (0, 0))
@@ -55,6 +57,12 @@ def level_selection():
                 if level1_btn.checkForInput(mouse_pos):
                     running = False
                     tg.TowerDefenseGame().run()  # <--- Spiel starten
+                if level2_btn.checkForInput(mouse_pos):
+                    running = False
+                    lvl2.TowerDefenseGame().run()
+                if level3_btn.checkForInput(mouse_pos):
+                    running = False
+                    lvl3.TowerDefenseGame().run()
                 if back_btn.checkForInput(mouse_pos):
                     running = False
                     main_menu()

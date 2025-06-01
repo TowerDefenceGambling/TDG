@@ -20,7 +20,7 @@ pygame.display.set_caption("Tower Defense")
 
 # Load assets
 BACKGROUND = pygame.transform.scale(
-    pygame.image.load("assets/images/level1/tiles.png"),
+    pygame.image.load("assets/images/level2/Map_Level_2.png"),
     (SCREEN_WIDTH, SCREEN_HEIGHT)
 )
 RAW_CANNON_DOUBLE = pygame.image.load("assets/images/tower/Cannon2.png")
@@ -74,7 +74,7 @@ LASER_SOUNDS_DOUBLE = [
 ]
 
 # Path
-PATH = [(int(x * SCREEN_WIDTH), int(y * SCREEN_HEIGHT)) for x, y in config.PATH_PERCENTAGES_LEVEL_1]
+PATH = [(int(x * SCREEN_WIDTH), int(y * SCREEN_HEIGHT)) for x, y in config.PATH_PERCENTAGES_LEVEL_2]
 
 # Helper functions
 def draw_circle(screen, pos, color, radius):
