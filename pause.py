@@ -4,13 +4,17 @@ import config
 from button import Button
 from main import load_settings
 from main import save_settings
+from main import get_font
 import json
+
+
 
 
 # Verwende hier ggf. auch globale Konstanten SCREEN_WIDTH und SCREEN_HEIGHT
 SCREEN_WIDTH = pygame.display.Info().current_w
 SCREEN_HEIGHT = pygame.display.Info().current_h
 
+BTN_Y_POSITIONS = [-120, 0, 120, 180]
 
 def load_translations():
     with open("translations.json", "r", encoding="utf-8") as f:
@@ -36,8 +40,9 @@ class Pause:
 
     def pause_menu(self):
         paused = True
-        font_large = pygame.font.SysFont(None, 72)
-        font_btn = pygame.font.SysFont(None, 48)
+        font_large = get_font(72)
+        font_btn = get_font(48)
+
 
         # Update Sprache aus Einstellungen (falls sie sich geändert hat)
         self.settings = load_settings()
@@ -50,10 +55,11 @@ class Pause:
         text_exit = self.t("exit")
         text_back = self.t("back")
 
-        resume_btn = Button(None, (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 90), text_resume, font_btn, config.WHITE, config.RED)
-        options_btn = Button(None, (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 30), text_options, font_btn, config.WHITE, config.RED)
-        exit_btn = Button(None, (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 30), text_exit, font_btn, config.WHITE, config.RED)
-        back_btn = Button(None, (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 60), text_back, font_btn, config.WHITE, config.RED)
+        resume_btn = Button(None, (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + BTN_Y_POSITIONS[0]), text_resume, font_btn, config.WHITE, config.RED)
+        options_btn = Button(None, (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + BTN_Y_POSITIONS[1]), text_options, font_btn, config.WHITE, config.RED)
+        exit_btn = Button(None, (SCREEN_WIDTH // 2, SCREEN_HEIGHT //2 + BTN_Y_POSITIONS[2]), text_exit, font_btn, config.WHITE, config.RED)
+        back_btn = Button(None, (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + BTN_Y_POSITIONS[3]), text_back, font_btn, config.WHITE, config.RED)
+
 
         options_menu = False
 
@@ -83,10 +89,10 @@ class Pause:
                             text_back = self.t("back")
 
                             # Buttons mit neuen Texten neu erstellen
-                            resume_btn = Button(None, (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 90), text_resume, font_btn, config.WHITE, config.RED)
-                            options_btn = Button(None, (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 30), text_options, font_btn, config.WHITE, config.RED)
-                            exit_btn = Button(None, (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 30), text_exit, font_btn, config.WHITE, config.RED)
-                            back_btn = Button(None, (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 60), text_back, font_btn, config.WHITE, config.RED)
+                            resume_btn = Button(None, (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + BTN_Y_POSITIONS[0]), text_resume, font_btn, config.WHITE, config.RED)
+                            options_btn = Button(None, (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + BTN_Y_POSITIONS[1]), text_options, font_btn, config.WHITE, config.RED)
+                            exit_btn = Button(None, (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + BTN_Y_POSITIONS[2]), text_exit, font_btn, config.WHITE, config.RED)
+                            back_btn = Button(None, (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + BTN_Y_POSITIONS[3]), text_back, font_btn, config.WHITE, config.RED)
 
                         elif exit_btn.checkForInput(mpos):
                             from main import main_menu
@@ -133,8 +139,8 @@ class Pause:
 
         self.languages = ["Deutsch", "English"]
 
-        font_large = pygame.font.SysFont(None, 60)
-        font = pygame.font.SysFont(None, 40)
+        font_large = get_font(60)
+        font = get_font(40)
 
         pygame.mixer.music.set_volume(volume / 100 if sound_on else 0)
         if sound_on and not pygame.mixer.music.get_busy():
@@ -149,14 +155,14 @@ class Pause:
 
             # Titel
             title = font_large.render(self.t("options"), True, config.WHITE)
-            self.screen.blit(title, title.get_rect(center=(SCREEN_WIDTH // 2, 50)))
+            self.screen.blit(title, title.get_rect(center=(SCREEN_WIDTH // 2, 60)))
 
             # Sprache
             lang_buttons = []
             for i, lang in enumerate(self.languages):
                 btn = Button(
                     image=None,
-                    pos=(SCREEN_WIDTH // 2, 150 + i * 50),
+                    pos=(SCREEN_WIDTH // 2, 150 + i * 80),  # Gut sichtbarer Abstand
                     text_input=lang,
                     font=font,
                     base_color="Green" if lang == selected_language else "White",
@@ -166,13 +172,13 @@ class Pause:
                 btn.update(self.screen)
                 lang_buttons.append((btn, lang))
 
-            # Sound an/aus
+            # Sound an/aus (mit Abstand zu Sprache)
             sound_label = font.render(self.t("sound"), True, config.WHITE)
-            self.screen.blit(sound_label, sound_label.get_rect(center=(SCREEN_WIDTH // 2, 270)))
+            self.screen.blit(sound_label, sound_label.get_rect(center=(SCREEN_WIDTH // 2, 320)))
 
             sound_button = Button(
                 image=None,
-                pos=(SCREEN_WIDTH // 2, 310),
+                pos=(SCREEN_WIDTH // 2, 370),
                 text_input=self.t("on") if sound_on else self.t("off"),
                 font=font,
                 base_color="Green" if sound_on else "White",
@@ -181,23 +187,23 @@ class Pause:
             sound_button.changeColor(mpos)
             sound_button.update(self.screen)
 
-            # Lautstärke
+            # Lautstärke (mit Abstand zu Sound)
             vol_label = font.render(self.t("volume"), True, config.WHITE)
-            self.screen.blit(vol_label, vol_label.get_rect(center=(SCREEN_WIDTH // 2, 370)))
+            self.screen.blit(vol_label, vol_label.get_rect(center=(SCREEN_WIDTH // 2, 440)))
 
             vol_value = font.render(str(volume), True, config.WHITE)
-            self.screen.blit(vol_value, vol_value.get_rect(center=(SCREEN_WIDTH // 2, 410)))
+            self.screen.blit(vol_value, vol_value.get_rect(center=(SCREEN_WIDTH // 2, 490)))
 
-            vol_down = Button(None, (SCREEN_WIDTH // 2 - 100, 410), "-", font, config.WHITE, "Green")
-            vol_up = Button(None, (SCREEN_WIDTH // 2 + 100, 410), "+", font, config.WHITE, "Green")
+            vol_down = Button(None, (SCREEN_WIDTH // 2 - 100, 490), "-", font, config.WHITE, "Green")
+            vol_up = Button(None, (SCREEN_WIDTH // 2 + 100, 490), "+", font, config.WHITE, "Green")
             vol_down.changeColor(mpos)
             vol_down.update(self.screen)
             vol_up.changeColor(mpos)
             vol_up.update(self.screen)
 
-            # Buttons unten
-            save_btn = Button(None, (SCREEN_WIDTH // 2, SCREEN_HEIGHT - 120), self.t("save"), font, config.WHITE, "Green")
-            back_btn = Button(None, (SCREEN_WIDTH // 2, SCREEN_HEIGHT - 60), self.t("back"), font, config.WHITE, "Green")
+            # Buttons unten (klar getrennt)
+            save_btn = Button(None, (SCREEN_WIDTH // 2, SCREEN_HEIGHT - 140), self.t("save"), font, config.WHITE, "Green")
+            back_btn = Button(None, (SCREEN_WIDTH // 2, SCREEN_HEIGHT - 70), self.t("back"), font, config.WHITE, "Green")
             save_btn.changeColor(mpos)
             save_btn.update(self.screen)
             back_btn.changeColor(mpos)
@@ -245,4 +251,5 @@ class Pause:
                         running = False
 
             pygame.display.flip()
+
 

@@ -7,6 +7,7 @@ import json
 import config
 import pause
 from button import Button
+from main import get_font
 
 # Initialize Pygame
 pygame.init()
@@ -115,15 +116,22 @@ LASER_BULLET = pygame.transform.scale(RAW_LASER_IMG, (20, 20))
 RAW_UPGRADE_BUTTON = pygame.transform.scale(RAW_UPGRADE_BUTTON, (200, config.ICON_SIZE + 20))
 ENEMY_IMG = pygame.transform.scale(RAW_ENEMY_IMG, (config.GRID_SIZE, config.GRID_SIZE))
 
+
 # Sounds
 LASER_SOUNDS_SMALL = [
     pygame.mixer.Sound("assets/sounds/Laser1.mp3"),
     pygame.mixer.Sound("assets/sounds/Laser2.mp3")
 ]
+for sound in LASER_SOUNDS_SMALL:
+    sound.set_volume(0.1)
+
 LASER_SOUNDS_DOUBLE = [
     pygame.mixer.Sound("assets/sounds/Laser3.mp3"),
     pygame.mixer.Sound("assets/sounds/Laser4.mp3")
 ]
+for sound in LASER_SOUNDS_DOUBLE:
+    sound.set_volume(0.1)
+
 
 # Path
 PATH = [(int(x * SCREEN_WIDTH), int(y * SCREEN_HEIGHT)) for x, y in config.PATH_PERCENTAGES_LEVEL_1]
@@ -396,64 +404,7 @@ class TowerDefenseGame:
         self.volume = 5
         self.win = False
         self.damage_sound = pygame.mixer.Sound("assets/sounds/damage.mp3")
-        self.damage_sound.set_volume(0.5)
-        # Falls kein Benutzer übergeben, aktuellen Login aus login.py abfragen
-        if username is None:
-            from login import check_login_status
-            logged_in, current_user = check_login_status()
-            if not logged_in:
-                print("Kein Benutzer eingeloggt. Bitte zuerst einloggen.")
-                sys.exit()
-            username = current_user
-        self.username = username
-        # Spieler-Fortschritt laden
-        prog = get_user_progress(self.username)
-        if prog is None:
-            prog = {"level": 1, "points": 0}
-            update_user_progress(self.username, prog)
-        self.player_level = prog.get("level", 1)
-        self.player_xp = prog.get("points", 0)
-        self.xp_to_next_level = self._xp_needed_for_level(self.player_level)
-        self.levelup_msg = ""
-        self.levelup_time = 0
-        
-        self.screen = screen
-        self.clock = pygame.time.Clock()
-        self.running = True
-        self.enemies = []
-        self.towers = []
-        self.occupied = set()
-        # Dev Mode
-        self.dev_mode = False
-        self.drawing = False
-        self.start_pos = None
-        # Placement cells
-        self.placement_cells = set(config.PLACEMENT_CELLS)
-        self.spawn_timer = 0
-        self.spawn_interval = 2000
-        self.lives = config.INITIAL_LIVES
-        self.coins = config.START_COINS
-        self.coin_reward = config.COIN_REWARD
-        self.selected = None
-        self.selected_tower = None
-        self.message = ''
-        self.msg_time = 0
-        self.upgrade_buttons = {}
-        self.upgrade_defs = config.TOWER_UPGRADES
-        # Neue Wave-Logik
-        self.wave_active = False
-        self.current_wave = 0
-        self.max_waves = 10
-        self.enemies_spawned = 0
-        self.enemies_to_spawn = 0
-        self.enemy_spawn_interval = 800  # Basisintervall
-        self.wave_cooldown = 3000       # Pause zwischen den Waves in ms
-        self.wave_cooldown = 3000       # Pause zwischen den Waves in ms
-        self.last_spawn_time = 0
-        self.volume = 5
-        self.win = False
-        self.damage_sound = pygame.mixer.Sound("assets/sounds/damage.mp3")
-        self.damage_sound.set_volume(0.5)
+        self.damage_sound.set_volume(0.1)
 
     def _xp_needed_for_level(self, lvl: int) -> int:
         return 100 * lvl
@@ -805,14 +756,17 @@ class TowerDefenseGame:
         pygame.display.flip()
 
     def game_over_screen(self):
-        font_large = pygame.font.SysFont(None, 72)
-        font_btn = pygame.font.SysFont(None, 48)
+        font_large = get_font(72)
+        font_btn = get_font(48)
+
         bg_image = pygame.image.load("assets/images/start_screen/Background1.png").convert()
         bg_image = pygame.transform.scale(bg_image, (SCREEN_WIDTH, SCREEN_HEIGHT))
         gameover_sounds = [
             pygame.mixer.Sound("assets/sounds/Fortnite.mp3"),
             pygame.mixer.Sound("assets/sounds/death-bong.mp3")
         ]
+        for sound in gameover_sounds:
+            sound.set_volume(0.1)
         random.choice(gameover_sounds).play()
         restart_btn = Button(None, (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 30), "Restart", font_btn, config.WHITE, config.RED)
         exit_btn = Button(None, (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 30), "Exit", font_btn, config.WHITE, config.RED)
@@ -843,11 +797,13 @@ class TowerDefenseGame:
                         return
 
     def winner_screen(self):
-        font_large = pygame.font.SysFont(None, 72)
-        font_btn = pygame.font.SysFont(None, 48)
+        font_large = get_font(72)
+        font_btn = get_font(48)
+
         bg_image = pygame.image.load("assets/images/start_screen/Background1.png").convert()
         bg_image = pygame.transform.scale(bg_image, (SCREEN_WIDTH, SCREEN_HEIGHT))
         win_sound = pygame.mixer.Sound("assets/sounds/gewonnen.mp3")
+        win_sound.set_volume(0.1)
         win_sound.play()
         restart_btn = Button(None, (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 30), "Restart", font_btn, config.WHITE, config.GREEN)
         exit_btn = Button(None, (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 30), "Exit", font_btn, config.WHITE, config.GREEN)

@@ -29,6 +29,11 @@ pygame.display.set_caption("Menu")
 BG = pygame.image.load("assets/images/start_screen/Background1.png")
 BG = pygame.transform.scale(BG, (SCREEN_WIDTH, SCREEN_HEIGHT))
 
+BG_OPTIONS = pygame.image.load("assets/images/start_screen/Background2.png").convert()
+BG_OPTIONS = pygame.transform.scale(BG_OPTIONS, (SCREEN_WIDTH, SCREEN_HEIGHT))
+
+
+
 translations = {}
 current_language = "Deutsch"
 
@@ -285,7 +290,7 @@ def main_menu():
     play_background_music(settings["volume"], settings["sound_on"])
 
     while True:
-        SCREEN.blit(BG, (0, 0))
+        SCREEN.blit(BG_OPTIONS, (0, 0))
         login_status, current_user = login.check_login_status()
         user_logged = "not logged in" if not login_status else current_user
         USERNAME_TEXT = get_font(15).render(f"{user_logged}", True, "White")
@@ -293,13 +298,10 @@ def main_menu():
         SCREEN.blit(USERNAME_TEXT, USERNAME_RECT)
 
         MENU_MOUSE_POS = pygame.mouse.get_pos()
-        MENU_TEXT = get_font(100).render("MAIN MENU", True, "#b68f40")
-        MENU_RECT = MENU_TEXT.get_rect(center=(SCREEN_WIDTH//2, 100))
-        SCREEN.blit(MENU_TEXT, MENU_RECT)
 
         PLAY_BUTTON = Button(
             image=pygame.image.load("assets/images/start_screen/Play Rect.png"),
-            pos=(SCREEN_WIDTH//2, 250),
+            pos=(SCREEN_WIDTH//2, 450),
             text_input=t("play"),
             font=get_font(75),
             base_color="#d7fcd4",
@@ -307,7 +309,7 @@ def main_menu():
         )
         OPTIONS_BUTTON = Button(
             image=pygame.image.load("assets/images/start_screen/Options Rect.png"),
-            pos=(SCREEN_WIDTH//2, 400),
+            pos=(SCREEN_WIDTH//2, 600),
             text_input=t("options"),
             font=get_font(75),
             base_color="#d7fcd4",
@@ -315,7 +317,7 @@ def main_menu():
         )
         QUIT_BUTTON = Button(
             image=pygame.image.load("assets/images/start_screen/Quit Rect.png"),
-            pos=(SCREEN_WIDTH//2, 550),
+            pos=(SCREEN_WIDTH//2, 750),
             text_input=t("quit"),
             font=get_font(75),
             base_color="#d7fcd4",

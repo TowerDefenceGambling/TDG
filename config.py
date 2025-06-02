@@ -7,7 +7,7 @@ COIN_REWARD   = 7   # Coins earned per enemy kill
 
 # Enemy settings
 ENEMY_HEALTH = 120   # Initial health of each enemy
-ENEMY_SPEED  = 1.5   # Movement speed of enemies
+ENEMY_SPEED  = 5   # Movement speed of enemies
 
 # Tower settings (cost in coins, range in pixels, cooldown in ms, damage per shot)
 TOWER_CONFIG = {
