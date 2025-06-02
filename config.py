@@ -7,7 +7,7 @@ COIN_REWARD   = 7   # Coins earned per enemy kill
 
 # Enemy settings
 ENEMY_HEALTH = 120   # Initial health of each enemy
-ENEMY_SPEED  = 5   # Movement speed of enemies
+ENEMY_SPEED  = 1.5   # Movement speed of enemies
 
 # Tower settings (cost in coins, range in pixels, cooldown in ms, damage per shot)
 TOWER_CONFIG = {
@@ -131,6 +131,7 @@ HUD_FONT_SIZE  = 40   # Font size for HUD text
 SHOP_WIDTH     = ICON_SIZE + ICON_PADDING * 2  # Width of the sidebar
 
 # Colors (RGB)
+YELLOW = (255, 255, 0)
 WHITE = (255, 255, 255)
 BLACK = (0,   0,   0)
 RED   = (255, 0,   0)
