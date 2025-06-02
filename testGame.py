@@ -632,7 +632,7 @@ class TowerDefenseGame:
             ph = SCREEN_HEIGHT + 400  # extend vertically beyond top/bottom
             visible_w = 600    # visible part width
             px = SCREEN_WIDTH - visible_w  # start so panel extends beyond right edge
-            py = -200          # extend above top
+            py = - 200          # extend above top
             # Blit upgrade panel background image
             panel = pygame.transform.scale(RAW_UPGRADE_PANEL, (pw, ph))
             self.screen.blit(panel, (px, py))
@@ -645,10 +645,10 @@ class TowerDefenseGame:
             if lvl < 3:
                 cost = self.upgrade_defs[next_lvl]['cost']
             # Button rectangle relative to panel
-            btn_w = pw - 40
-            btn_h = config.ICON_SIZE + 20
-            btn_x = px + 20
-            btn_y = py + 300
+            btn_w = pw - 300
+            btn_h = config.ICON_SIZE + 200
+            btn_x = px + 160
+            btn_y = py + 250
             btn_rect = pygame.Rect(btn_x, btn_y, btn_w, btn_h)
             # Draw button background border
             border_color = config.GREEN if lvl < 3 and self.coins >= cost else config.RED
@@ -658,18 +658,18 @@ class TowerDefenseGame:
 
             # Draw upgrade panel icon
             icon_y = btn_y + (btn_h - config.ICON_SIZE) // 2
-            self.screen.blit(UPGRADE_ICON, (btn_x + 10, icon_y))
+            self.screen.blit(UPGRADE_ICON, (btn_x + 115, icon_y))
             # Draw cost with coin icon if upgradable
             if lvl < 3:
-                coin_x = btn_x + 20 + config.ICON_SIZE
+                coin_x = btn_x + 110 + config.ICON_SIZE
                 self.screen.blit(COIN_ICON, (coin_x, icon_y + (config.ICON_SIZE - COIN_ICON.get_height())//2))
-                cost_surf = font_small.render(str(cost), True, config.BLACK)
+                cost_surf = font_small.render(str(cost), True, config.WHITE)
                 self.screen.blit(cost_surf, (coin_x + COIN_ICON.get_width() + 10,
                                              icon_y + (config.ICON_SIZE - cost_surf.get_height())//2))
             # Draw button label
             label = "Upgrade" if lvl < 3 else "Maxed"
-            label_surf = font_small.render(label, True, config.BLACK)
-            lbl_x = btn_x + btn_w - label_surf.get_width() - 20
+            label_surf = font_small.render(label, True, config.WHITE)
+            lbl_x = btn_x + btn_w - label_surf.get_width() - 140
             lbl_y = btn_y + (btn_h - label_surf.get_height())//2
             self.screen.blit(label_surf, (lbl_x, lbl_y))
         # Message
