@@ -78,10 +78,29 @@ RAW_LASER_IMG = pygame.image.load("assets/images/tower/Laser_Bullet.png")
 RAW_UPGRADE_PANEL = pygame.image.load("assets/images/tower/Upgrade_Panel.png")
 # Upgrade button image
 RAW_UPGRADE_BUTTON = pygame.image.load("assets/images/tower/Upgrade Button.png")
+# Speed buttons
+RAW_SPEED_X1 = pygame.image.load("assets/images/tower/SpeedX1.png")
+RAW_SPEED_X2 = pygame.image.load("assets/images/tower/SpeedX2.png")
 # Sound
 SOUND_ENEMY_DEATH = pygame.mixer.Sound("assets/sounds/Uff.mp3")
 
 # Scale icons and images
+CANNON_DOUBLE = pygame.transform.scale(RAW_CANNON_DOUBLE, (config.ICON_SIZE, config.ICON_SIZE))
+CANNON_SMALL = pygame.transform.scale(RAW_CANNON_SMALL, (config.ICON_SIZE, config.ICON_SIZE))
+COIN_ICON = pygame.transform.scale(RAW_COIN_ICON, (config.HUD_FONT_SIZE, config.HUD_FONT_SIZE))
+HEART_ICON = pygame.transform.scale(RAW_HEART_ICON, (config.HUD_FONT_SIZE, config.HUD_FONT_SIZE))
+UPGRADE_ICON = pygame.transform.scale(RAW_UPGRADE_ICON, (config.ICON_SIZE, config.ICON_SIZE))
+ICON_DAMAGE = pygame.transform.scale(RAW_ICON_DAMAGE, (config.ICON_SIZE, config.ICON_SIZE))
+ICON_RANGE = pygame.transform.scale(RAW_ICON_RANGE, (config.ICON_SIZE, config.ICON_SIZE))
+ICON_RELOAD = pygame.transform.scale(RAW_ICON_RELOAD, (config.ICON_SIZE, config.ICON_SIZE))
+# projectile images
+BULLET_IMG = pygame.transform.scale(RAW_BULLET_IMG, (20, 20))
+LASER_BULLET = pygame.transform.scale(RAW_LASER_IMG, (20, 20))
+RAW_UPGRADE_BUTTON = pygame.transform.scale(RAW_UPGRADE_BUTTON, (200, config.ICON_SIZE + 20))
+ENEMY_IMG = pygame.transform.scale(RAW_ENEMY_IMG, (config.GRID_SIZE, config.GRID_SIZE))
+# Speed images scaled to 140x140
+SPEED_X1 = pygame.transform.scale(RAW_SPEED_X1, (140, 140))
+SPEED_X2 = pygame.transform.scale(RAW_SPEED_X2, (140, 140))
 CANNON_DOUBLE = pygame.transform.scale(RAW_CANNON_DOUBLE, (config.ICON_SIZE, config.ICON_SIZE))
 CANNON_SMALL = pygame.transform.scale(RAW_CANNON_SMALL, (config.ICON_SIZE, config.ICON_SIZE))
 COIN_ICON = pygame.transform.scale(RAW_COIN_ICON, (config.HUD_FONT_SIZE, config.HUD_FONT_SIZE))
@@ -200,6 +219,24 @@ class Enemy:
 class Tower:
     def __init__(self, x, y, ttype):
         self.x, self.y = x, y
+        self.type = ttype  # 'small' oder 'double'
+        cfg = config.TOWER_CONFIG[ttype]
+        self.cost = cfg['cost']
+        self.base_cooldown = cfg['cooldown']  # Basiskühlzeit
+        self.cooldown = self.base_cooldown
+        self.range = cfg['range']
+        self.damage = cfg['damage']
+        self.last_shot = 0
+        self.bullets = []
+        self.target = None
+        self.sound_index = 0
+        self.level = 0  # Combined upgrade level
+        # Für double tower verzögerten zweiten Schuss
+        self.next_shot_time = None
+        self._shot_perp = (0,0)
+        # Textur laden
+        self._update_texture()
+        self.x, self.y = x, y
         self.type = ttype  # 'small' or 'double'
         cfg = config.TOWER_CONFIG[ttype]
         self.cost = cfg['cost']
@@ -302,6 +339,64 @@ class Tower:
 
 class TowerDefenseGame:
     def __init__(self, username=None):
+        # Falls kein Benutzer übergeben, aktuellen Login aus login.py abfragen
+        if username is None:
+            from login import check_login_status
+            logged_in, current_user = check_login_status()
+            if not logged_in:
+                print("Kein Benutzer eingeloggt. Bitte zuerst einloggen.")
+                sys.exit()
+            username = current_user
+        self.username = username
+        # Spieler-Fortschritt laden
+        prog = get_user_progress(self.username)
+        if prog is None:
+            prog = {"level": 1, "points": 0}
+            update_user_progress(self.username, prog)
+        self.player_level = prog.get("level", 1)
+        self.player_xp = prog.get("points", 0)
+        self.xp_to_next_level = self._xp_needed_for_level(self.player_level)
+        self.levelup_msg = ""
+        self.levelup_time = 0
+        
+        self.screen = screen
+        self.clock = pygame.time.Clock()
+        self.running = True
+        self.enemies = []
+        self.towers = []
+        self.occupied = set()
+        # Dev Mode
+        self.dev_mode = False
+        self.drawing = False
+        self.start_pos = None
+        # Placement cells
+        self.placement_cells = set(config.PLACEMENT_CELLS)
+        self.spawn_timer = 0
+        self.spawn_interval = 2000
+        self.lives = config.INITIAL_LIVES
+        self.coins = config.START_COINS
+        self.coin_reward = config.COIN_REWARD
+        self.selected = None
+        self.selected_tower = None
+        self.message = ''
+        self.msg_time = 0
+        self.upgrade_buttons = {}
+        self.upgrade_defs = config.TOWER_UPGRADES
+        # Game speed (1x or 2x)
+        self.game_speed = 1
+        # Neue Wave-Logik
+        self.wave_active = False
+        self.current_wave = 0
+        self.max_waves = 10
+        self.enemies_spawned = 0
+        self.enemies_to_spawn = 0
+        self.enemy_spawn_interval = 800  # Basisintervall
+        self.wave_cooldown = 3000       # Pause zwischen den Waves in ms
+        self.last_spawn_time = 0
+        self.volume = 5
+        self.win = False
+        self.damage_sound = pygame.mixer.Sound("assets/sounds/damage.mp3")
+        self.damage_sound.set_volume(0.5)
         # Falls kein Benutzer übergeben, aktuellen Login aus login.py abfragen
         if username is None:
             from login import check_login_status
@@ -473,21 +568,13 @@ class TowerDefenseGame:
                 self.dev_mode = not self.dev_mode
                 self.message = f"Dev Mode {'ein' if self.dev_mode else 'aus'}"
                 self.msg_time = pygame.time.get_ticks()
-            elif self.dev_mode and ev.type == pygame.MOUSEBUTTONDOWN and ev.button == 1:
-                self.drawing = True
-                self.start_pos = pygame.mouse.get_pos()
-            elif self.dev_mode and ev.type == pygame.MOUSEBUTTONUP and ev.button == 1:
-                self.drawing = False
-                x0, y0 = self.start_pos
-                x1, y1 = pygame.mouse.get_pos()
-                gx0, gy0 = x0//config.GRID_SIZE, y0//config.GRID_SIZE
-                gx1, gy1 = x1//config.GRID_SIZE, y1//config.GRID_SIZE
-                for gx in range(min(gx0, gx1), max(gx0, gx1)+1):
-                    for gy in range(min(gy0, gy1), max(gy0, gy1)+1):
-                        self.placement_cells.add((gx, gy))
-                config.PLACEMENT_CELLS = list(self.placement_cells)
             elif ev.type == pygame.MOUSEBUTTONDOWN:
                 x, y = pygame.mouse.get_pos()
+                # Speed button area (unten rechts), vergrößerte Fläche
+                speed_rect = pygame.Rect(SCREEN_WIDTH - 150, SCREEN_HEIGHT - 50, 140, 40)
+                if speed_rect.collidepoint(x, y):
+                    self.game_speed = 2 if self.game_speed == 1 else 1
+                    return
                 gx, gy = x // config.GRID_SIZE, y // config.GRID_SIZE
                 if self._handle_upgrade_click(x, y):
                     return
@@ -589,6 +676,11 @@ class TowerDefenseGame:
                 rw, rh = abs(x1 - x0), abs(y1 - y0)
                 pygame.draw.rect(self.screen, config.BLUE, (rx, ry, rw, rh), 2)
         font = load_font(config.HUD_FONT_SIZE)
+        # Geschwindigkeit-Button unten rechts (mit Bild)
+        if self.game_speed == 2:
+            self.screen.blit(SPEED_X2, (SCREEN_WIDTH - 150, SCREEN_HEIGHT - 150))
+        else:
+            self.screen.blit(SPEED_X1, (SCREEN_WIDTH - 150, SCREEN_HEIGHT - 150))
         self.screen.blit(COIN_ICON, (config.ICON_PADDING, config.ICON_PADDING))
         coins_txt = font.render(str(self.coins), True, config.BLACK)
         self.screen.blit(coins_txt, (config.ICON_PADDING+COIN_ICON.get_width()+5, config.ICON_PADDING))
@@ -697,9 +789,11 @@ class TowerDefenseGame:
             )
         else:
             self.levelup_msg = ""
-        wave_text = font.render(f"Wave: {self.current_wave} / {self.max_waves}", True, (255, 255, 255))
-        text_pos = (10, self.screen.get_height() - wave_text.get_height() - 10)
-        self.screen.blit(wave_text, text_pos)
+                # Anzeige der aktuellen Wave oben mittig
+        wave_text = font.render(f"Wave: {self.current_wave} / {self.max_waves}", True, config.WHITE)
+        wave_rect = wave_text.get_rect(center=(SCREEN_WIDTH // 2, config.HUD_FONT_SIZE))
+        self.screen.blit(wave_text, wave_rect)
+
         pygame.display.flip()
 
     def show_win_screen(self):
@@ -792,7 +886,9 @@ class TowerDefenseGame:
     def run(self):
         while self.running:
             self.handle_events()
-            self.update()
+            # Update mehrfach je nach game_speed für erhöhte Geschwindigkeit
+            for _ in range(self.game_speed):
+                self.update()
             self.draw()
             self.clock.tick(60)
         self.end_game()

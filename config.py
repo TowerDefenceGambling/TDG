@@ -128,7 +128,7 @@ PLACEMENT_CELLS = [
 ICON_SIZE      = 70   # Icon size for towers and upgrades
 ICON_PADDING   = 10   # Padding around icons
 HUD_FONT_SIZE  = 40   # Font size for HUD text
-SHOP_WIDTH     = ICON_SIZE + ICON_PADDING * 2  # Width of the sidebar
+SHOP_WIDTH     = ICON_SIZE + ICON_PADDING * 4  # Width of the sidebar
 
 # Colors (RGB)
 YELLOW = (255, 255, 0)
