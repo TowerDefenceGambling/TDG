@@ -138,6 +138,7 @@ RED   = (255, 0,   0)
 GREEN = (0,   255, 0)
 BLUE  = (0,   0, 255)
 GRAY  = (169, 169, 169)
+DARK_GREEN = (0, 100, 0)
 
 # Enemy path defined as relative percentages of screen size
 PATH_PERCENTAGES_LEVEL_1 = [

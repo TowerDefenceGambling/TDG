@@ -614,7 +614,7 @@ class TowerDefenseGame:
 
     def draw(self):
         self.screen.blit(BACKGROUND, (0,0))
-        pygame.draw.rect(self.screen, config.GRAY, (0,0,config.SHOP_WIDTH,SCREEN_HEIGHT))
+        pygame.draw.rect(self.screen, config.DARK_GREEN, (0,0,config.SHOP_WIDTH,SCREEN_HEIGHT))
         if self.dev_mode:
             overlay = pygame.Surface((config.GRID_SIZE, config.GRID_SIZE), pygame.SRCALPHA)
             overlay.fill((0,0,255,50))
